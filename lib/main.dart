@@ -18,6 +18,7 @@ import 'presentation/screens/dashboard/meal_statistics_screen.dart';
 import 'presentation/screens/dashboard/meal_details_screen.dart';
 import 'presentation/screens/dashboard/profile_screen.dart';
 import 'presentation/screens/dashboard/edit_profile_screen.dart';
+import 'presentation/screens/onboarding_screen.dart';
 import 'data/models/meal.dart';
 
 void main() {
@@ -90,7 +91,8 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         final isAuthenticated = ref.read(authProvider).isAuthenticated;
         final isOnLoginOrRegister = state.matchedLocation == '/' ||
             state.matchedLocation == '/register' ||
-            state.matchedLocation == '/splash';
+            state.matchedLocation == '/splash' ||
+            state.matchedLocation == '/onboarding';
 
         // If logged out and on a protected page, send to login.
         if (!isAuthenticated && !isOnLoginOrRegister) {
@@ -102,6 +104,10 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         GoRoute(
           path: '/splash',
           builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/onboarding',
+          builder: (context, state) => const OnboardingScreen(),
         ),
         GoRoute(
           path: '/',

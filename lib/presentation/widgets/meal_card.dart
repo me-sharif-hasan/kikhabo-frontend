@@ -21,15 +21,17 @@ class MealCard extends ConsumerStatefulWidget {
 
 class _MealCardState extends ConsumerState<MealCard> {
   int _currentRating = 0;
+  String? _currentStatus;
 
   @override
   void initState() {
     super.initState();
     _currentRating = widget.meal.rating?.toInt() ?? 0;
+    _currentStatus = widget.meal.mealStatus;
   }
 
   Color _getStatusColor() {
-    switch (widget.meal.mealStatus) {
+    switch (_currentStatus) {
       case 'TAKEN':
         return AppColors.primary;
       case 'SKIPPED':
@@ -48,6 +50,11 @@ class _MealCardState extends ConsumerState<MealCard> {
     );
 
     if (mounted) {
+      if (success) {
+        setState(() {
+          _currentStatus = status;
+        });
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success ? 'Meal updated!' : 'Failed to update meal'),
@@ -67,7 +74,7 @@ class _MealCardState extends ConsumerState<MealCard> {
     // Immediately persist rating to API
     await ref.read(mealPlanningProvider.notifier).updateMealStatus(
       mealId: widget.meal.id!,
-      status: widget.meal.mealStatus ?? 'PLANNED',
+      status: _currentStatus ?? 'PLANNED',
       rating: rating,
     );
   }
@@ -145,7 +152,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                                 style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryLight),
                               ),
                             ),
-                            if (widget.meal.mealStatus != null)
+                            if (_currentStatus != null)
                               Container(
                                 margin: const EdgeInsets.only(top: 4),
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -155,7 +162,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                                   border: Border.all(color: _getStatusColor(), width: 1),
                                 ),
                                 child: Text(
-                                  widget.meal.mealStatus!,
+                                  _currentStatus!,
                                   style: AppTextStyles.labelSmall.copyWith(
                                     color: _getStatusColor(),
                                     fontSize: 10,
@@ -208,20 +215,20 @@ class _MealCardState extends ConsumerState<MealCard> {
                 right: 12,
                 child: GestureDetector(
                   onTap: () => _updateStatus(
-                    widget.meal.mealStatus == 'TAKEN' ? 'PLANNED' : 'TAKEN',
+                    _currentStatus == 'TAKEN' ? 'PLANNED' : 'TAKEN',
                   ),
                   child: Container(
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      gradient: widget.meal.mealStatus == 'TAKEN'
+                      gradient: _currentStatus == 'TAKEN'
                           ? LinearGradient(
                               colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                           : null,
-                      color: widget.meal.mealStatus != 'TAKEN' 
+                      color: _currentStatus != 'TAKEN'
                           ? AppColors.surface.withOpacity(0.3)
                           : null,
                       shape: BoxShape.circle,
@@ -238,11 +245,11 @@ class _MealCardState extends ConsumerState<MealCard> {
                       ],
                     ),
                     child: Icon(
-                      widget.meal.mealStatus == 'TAKEN' 
-                          ? Icons.check_circle 
+                      _currentStatus == 'TAKEN'
+                          ? Icons.check_circle
                           : Icons.check_circle_outline,
-                      color: widget.meal.mealStatus == 'TAKEN' 
-                          ? Colors.white 
+                      color: _currentStatus == 'TAKEN'
+                          ? Colors.white
                           : AppColors.primaryLight,
                       size: 30,
                     ),

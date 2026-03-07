@@ -9,7 +9,7 @@ class CacheService {
   static const String _suggestedMealsKey = 'cached_suggested_meals';
   static const String _mealHistoryTimestampKey = 'cached_meal_history_timestamp';
   static const String _suggestedMealsTimestampKey = 'cached_suggested_meals_timestamp';
-  
+
   // 3 months in milliseconds
   static const int _cacheExpirationMs = 90 * 24 * 60 * 60 * 1000;
 
@@ -30,7 +30,7 @@ class CacheService {
   /// Get cached meal history (returns null if expired or not found)
   Future<List<Meal>?> getCachedMealHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Check if cache exists
     final jsonString = prefs.getString(_mealHistoryKey);
     if (jsonString == null) {
@@ -44,7 +44,7 @@ class CacheService {
       debugPrint('⏰ No timestamp for cached meal history');
       return null;
     }
-    
+
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - timestamp > _cacheExpirationMs) {
       debugPrint('⏰ Cached meal history expired');
@@ -82,7 +82,7 @@ class CacheService {
   /// Get cached suggested meals (returns null if expired or not found)
   Future<List<Meal>?> getCachedSuggestedMeals() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Check if cache exists
     final jsonString = prefs.getString(_suggestedMealsKey);
     if (jsonString == null) return null;
@@ -90,7 +90,7 @@ class CacheService {
     // Check if cache is expired
     final timestamp = prefs.getInt(_suggestedMealsTimestampKey);
     if (timestamp == null) return null;
-    
+
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - timestamp > _cacheExpirationMs) {
       // Cache expired, clear it

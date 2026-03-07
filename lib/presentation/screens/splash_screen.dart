@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../domain/providers/auth_provider.dart';
@@ -42,26 +42,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     await Future.delayed(const Duration(milliseconds: 500));
     
     if (!mounted) return;
-    
-    // Ensure auth status is checked
-    await ref.read(authProvider.notifier).checkAuthStatus();
-    
-    if (!mounted) return;
-    
-    // Check connectivity first
-    bool isOnline = await _checkConnectivity();
-    
-    if (!isOnline) {
-      // Offline - go directly to meal history with cached data
-      if (mounted) {
-        context.go('/dashboard/meals');
-      }
+
+    // Check if onboarding has been completed
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('onboarding_done') ?? false;
+
+    if (!onboardingDone) {
+      if (mounted) context.go('/onboarding');
       return;
     }
-    
-    // Online - check authentication
+
+    // Ensure auth status is checked
+    await ref.read(authProvider.notifier).checkAuthStatus();
+
+    if (!mounted) return;
+
     final authState = ref.read(authProvider);
-    
+
     if (authState.isAuthenticated) {
       // User is authenticated, go to dashboard
       if (mounted) {
@@ -75,16 +72,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     }
   }
   
-  Future<bool> _checkConnectivity() async {
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
-  }
-
   @override
   void dispose() {
     _animationController.dispose();

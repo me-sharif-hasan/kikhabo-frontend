@@ -9,6 +9,8 @@ class GlassButton extends StatelessWidget {
   final double? width;
   final double? height;
   final Gradient? gradient;
+  /// When set (0.0–1.0), the button renders as a progress bar instead of a spinner.
+  final double? progress;
 
   const GlassButton({
     super.key,
@@ -18,10 +20,20 @@ class GlassButton extends StatelessWidget {
     this.width,
     this.height,
     this.gradient,
+    this.progress,
   });
+
+  String _progressLabel(double p) {
+    if (p < 0.4) return 'Analysing preferences...';
+    if (p < 0.7) return 'Crafting your meal plan...';
+    if (p < 0.9) return 'Almost there...';
+    return 'Finishing up...';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isProgress = progress != null;
+
     return Container(
       width: width ?? double.infinity,
       height: height ?? 50,
@@ -37,32 +49,99 @@ class GlassButton extends StatelessWidget {
           ),
         ],
       ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                text,
-                style: AppTextStyles.labelLarge.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+      child: isProgress
+          ? _ProgressFill(
+              progress: progress!,
+              gradient: gradient,
+              label: _progressLabel(progress!),
+            )
+          : ElevatedButton(
+              onPressed: isLoading ? null : onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      text,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+    );
+  }
+}
+
+class _ProgressFill extends StatelessWidget {
+  final double progress;
+  final Gradient? gradient;
+  final String label;
+
+  const _ProgressFill({
+    required this.progress,
+    required this.gradient,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (progress * 100).clamp(0, 100).toInt();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(
+        children: [
+          // Dimmed base
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.45,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  color: gradient == null ? AppColors.primary : null,
+                ),
+              ),
+            ),
+          ),
+          // Filled portion
+          AnimatedFractionallySizedBox(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            widthFactor: progress.clamp(0.0, 1.0),
+            heightFactor: 1.0,
+            alignment: Alignment.centerLeft,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: gradient,
+                color: gradient == null ? AppColors.primary : null,
+              ),
+            ),
+          ),
+          // Label
+          Center(
+            child: Text(
+              '$percent%  $label',
+              style: AppTextStyles.labelLarge.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

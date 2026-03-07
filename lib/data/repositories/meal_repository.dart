@@ -16,14 +16,14 @@ class MealRepository {
     debugPrint(e.toString());
     if (e is DioException) {
       final message = e.response?.data['message'];
-      
+
       // Handle List of error messages
       if (message is List) {
         return message.map((e) => e.toString()).join('\n');
       } else if (message is String) {
         return message;
       }
-      
+
       return 'Network error occurred';
     }
     return 'Unknown error occurred';

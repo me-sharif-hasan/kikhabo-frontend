@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_styles.dart';
@@ -33,7 +34,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.menu, color: AppColors.textPrimary),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          onPressed: () {
+            AnalyticsService.instance.logDrawerOpened();
+            _scaffoldKey.currentState?.openDrawer();
+          },
         ),
         actions: [
           Padding(
@@ -98,33 +102,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   icon: Icons.home_rounded,
                   title: 'Dashboard',
                   onTap: () => context.go('/dashboard/home'),
+                  analyticsId: 'nav_home',
                 ),
                 _buildDrawerItem(
                   icon: Icons.list_alt_rounded,
                   title: 'Meal List',
                   onTap: () => context.go('/dashboard/meals'),
+                  analyticsId: 'nav_meals',
                 ),
                 _buildDrawerItem(
                   icon: Icons.people_rounded,
                   title: 'Family Members',
                   onTap: () => context.go('/dashboard/family'),
+                  analyticsId: 'nav_family',
                 ),
                 _buildDrawerItem(
                   icon: Icons.settings_rounded,
                   title: 'Preferences',
                   onTap: () => context.go('/dashboard/preferences'),
+                  analyticsId: 'nav_preferences',
                 ),
                 _buildDrawerItem(
                   icon: Icons.bar_chart_rounded,
                   title: 'Statistics',
                   onTap: () => context.go('/dashboard/statistics'),
+                  analyticsId: 'nav_statistics',
                 ),
                 const Spacer(),
                 Divider(color: AppColors.glassBorder.withOpacity(0.3)),
                 _buildDrawerItem(
                   icon: Icons.logout_rounded,
                   title: 'Logout',
+                  analyticsId: 'nav_logout',
                   onTap: () async {
+                    AnalyticsService.instance.logLogout();
                     await ref.read(authProvider.notifier).logout();
                     if (mounted) context.go('/');
                   },
@@ -135,13 +146,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.bgGradient2, 
+      body: PopScope(
+        canPop: context.canPop(),
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            final currentLocation = GoRouterState.of(context).uri.toString();
+            if (currentLocation != '/dashboard/home') {
+              context.go('/dashboard/home');
+            }
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: AppColors.bgGradient2,
+          ),
+          child: widget.child,
         ),
-        child: widget.child,
       ),
     );
   }
@@ -150,13 +172,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    String? analyticsId,
   }) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textSecondary),
       title: Text(title, style: AppTextStyles.bodyMedium),
       onTap: () {
-        // Close drawer then navigate
         _scaffoldKey.currentState?.closeDrawer();
+        if (analyticsId != null) {
+          AnalyticsService.instance.logDrawerNavigation(analyticsId);
+        }
         onTap();
       },
       hoverColor: AppColors.primary.withOpacity(0.1),

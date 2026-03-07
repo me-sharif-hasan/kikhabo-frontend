@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/services/youtube_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -44,7 +46,7 @@ class YouTubeVideoCarousel extends ConsumerWidget {
             error: (_, __) => _FallbackSearchLinks(searchTerms: searchTerms),
             data: (videos) {
               if (videos.isEmpty) return _FallbackSearchLinks(searchTerms: searchTerms);
-              return _VideoPageView(videos: videos);
+              return _VideoPageView(videos: videos, searchTerm: query);
             },
           ),
         ],
@@ -55,8 +57,9 @@ class YouTubeVideoCarousel extends ConsumerWidget {
 
 class _VideoPageView extends StatefulWidget {
   final List<YouTubeVideo> videos;
+  final String searchTerm;
 
-  const _VideoPageView({required this.videos});
+  const _VideoPageView({required this.videos, required this.searchTerm});
 
   @override
   State<_VideoPageView> createState() => _VideoPageViewState();
@@ -86,7 +89,10 @@ class _VideoPageViewState extends State<_VideoPageView> {
               final video = widget.videos[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: _VideoThumbnailCard(video: video),
+                child: _VideoThumbnailCard(
+                  video: video,
+                  searchTerm: widget.searchTerm,
+                ),
               );
             },
           ),
@@ -116,13 +122,21 @@ class _VideoPageViewState extends State<_VideoPageView> {
 
 class _VideoThumbnailCard extends StatelessWidget {
   final YouTubeVideo video;
+  final String searchTerm;
 
-  const _VideoThumbnailCard({required this.video});
+  const _VideoThumbnailCard({required this.video, required this.searchTerm});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _openPlayer(context),
+      onTap: () {
+        AnalyticsService.instance.logYouTubeVideoPlayed(
+          videoId: video.videoId,
+          videoTitle: video.title,
+          searchTerm: searchTerm,
+        );
+        _openPlayer(context);
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
@@ -181,6 +195,8 @@ class _VideoThumbnailCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (_) => _YouTubePlayerSheet(videoId: video.videoId, title: video.title),
     );
   }
@@ -208,8 +224,25 @@ class _YouTubePlayerSheetState extends State<_YouTubePlayerSheet> {
     );
   }
 
+  Future<void> _enterFullScreen() async {
+    final position = _controller.value.position;
+    _controller.pause();
+    AnalyticsService.instance.logYouTubeFullscreen(videoId: widget.videoId);
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _FullScreenVideoPage(
+          videoId: widget.videoId,
+          startAt: position,
+          title: widget.title,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _controller.pause();
     _controller.dispose();
     super.dispose();
   }
@@ -222,34 +255,125 @@ class _YouTubePlayerSheetState extends State<_YouTubePlayerSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border.all(color: AppColors.glassBorder, width: 1),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white30,
-              borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white30,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: Colors.redAccent,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Text(
-              widget.title,
-              style: AppTextStyles.bodyMedium,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            YoutubePlayer(
+              controller: _controller,
+              showVideoProgressIndicator: true,
+              progressIndicatorColor: Colors.redAccent,
+              bottomActions: [
+                const SizedBox(width: 8),
+                CurrentPosition(),
+                const SizedBox(width: 8),
+                ProgressBar(isExpanded: true),
+                const SizedBox(width: 8),
+                RemainingDuration(),
+                const SizedBox(width: 8),
+                PlaybackSpeedButton(),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen, color: Colors.white),
+                  onPressed: _enterFullScreen,
+                ),
+              ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Text(
+                widget.title,
+                style: AppTextStyles.bodyMedium,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FullScreenVideoPage extends StatefulWidget {
+  final String videoId;
+  final Duration startAt;
+  final String title;
+
+  const _FullScreenVideoPage({
+    required this.videoId,
+    required this.startAt,
+    required this.title,
+  });
+
+  @override
+  State<_FullScreenVideoPage> createState() => _FullScreenVideoPageState();
+}
+
+class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _controller = YoutubePlayerController(
+      initialVideoId: widget.videoId,
+      flags: YoutubePlayerFlags(
+        autoPlay: true,
+        startAt: widget.startAt.inSeconds,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.pause();
+    _controller.dispose();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: YoutubePlayer(
+          controller: _controller,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: Colors.redAccent,
+          bottomActions: [
+            const SizedBox(width: 8),
+            CurrentPosition(),
+            const SizedBox(width: 8),
+            ProgressBar(isExpanded: true),
+            const SizedBox(width: 8),
+            RemainingDuration(),
+            const SizedBox(width: 8),
+            PlaybackSpeedButton(),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
       ),
     );
   }

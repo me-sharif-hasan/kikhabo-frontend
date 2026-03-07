@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/validators.dart';
 import '../../../domain/providers/auth_provider.dart';
+import '../../../domain/providers/user_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_text_field.dart';
@@ -23,6 +25,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _rememberMe = false;
   
   @override
+  void initState() {
+    super.initState();
+    AnalyticsService.instance.logScreenView('login');
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -38,6 +46,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       
       final state = ref.read(authProvider);
       if (state.isAuthenticated && mounted) {
+        // Log the login with user info for audience segmentation.
+        final user = ref.read(userProvider).user;
+        AnalyticsService.instance.logLogin(
+          userId: user?.id?.toString() ?? _emailController.text,
+          email: _emailController.text.trim(),
+          displayName: user != null
+              ? '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim()
+              : null,
+        );
         context.go('/dashboard/home');
       } else if (state.error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

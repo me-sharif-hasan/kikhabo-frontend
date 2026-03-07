@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/api_error_handler.dart';
@@ -27,9 +28,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   double _mealsPerDay = 3.0;
 
   Future<void> _generateMealPlan() async {
-    // Calculate total meal count
     final totalMealCount = (_daysCount * _mealsPerDay).toInt();
-    
+
+    // Track the button tap and the generation attempt
+    AnalyticsService.instance.logButtonTap(
+      buttonId: 'generate_meal_plan',
+      screenName: 'home',
+    );
+
     // Create preference DTO
     final preferenceDto = MealPreferenceDto(
       spicyRating: _spicyRating,
@@ -44,11 +50,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       // Call API
       await ref.read(mealPlanningProvider.notifier).generateMealPlan(preferenceDto);
-      
-      // Navigate to meals screen with suggested view on success
-      if (mounted) {
-        context.go('/dashboard/meals?view=suggested');
+
+      // Log successful generation with preferences as parameters.
+      String priceLabel;
+      if (_priceRating <= 2) {
+        priceLabel = 'budget';
+      } else if (_priceRating <= 4) {
+        priceLabel = 'standard';
+      } else {
+        priceLabel = 'premium';
       }
+      AnalyticsService.instance.logMealPlanGenerated(
+        days: _daysCount.toInt(),
+        mealsPerDay: _mealsPerDay.toInt(),
+        spiciness: _spicyRating,
+        saltiness: _saltRating,
+        priceRange: priceLabel,
+      );
+
+      if (mounted) context.go('/dashboard/meals?view=suggested');
     } catch (e) {
       // Error handling using centralized error handler
       if (mounted) {
@@ -66,6 +86,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.instance.logScreenView('home');
   }
 
   @override

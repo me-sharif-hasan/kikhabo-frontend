@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/user_datasource.dart';
 import '../../data/models/user.dart';
@@ -30,8 +31,9 @@ class UserState {
 
 class UserNotifier extends StateNotifier<UserState> {
   final UserRepository _repository;
+  final Ref _ref;
 
-  UserNotifier(this._repository) : super(const UserState());
+  UserNotifier(this._repository, this._ref) : super(const UserState());
 
   Future<void> loadCurrentUser() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -39,6 +41,15 @@ class UserNotifier extends StateNotifier<UserState> {
       final user = await _repository.getCurrentUser();
       state = state.copyWith(isLoading: false, user: user);
     } catch (e) {
+      // If the server explicitly rejects the token (4xx), force logout.
+      if (e is DioException &&
+          e.response != null &&
+          e.response!.statusCode != null &&
+          e.response!.statusCode! >= 400 &&
+          e.response!.statusCode! < 500) {
+        await _ref.read(authProvider.notifier).logout();
+        return;
+      }
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -77,7 +88,7 @@ class UserNotifier extends StateNotifier<UserState> {
 }
 
 final userProvider = StateNotifierProvider<UserNotifier, UserState>((ref) {
-  final notifier = UserNotifier(ref.watch(userRepositoryProvider));
+  final notifier = UserNotifier(ref.watch(userRepositoryProvider), ref);
 
   // Auto-fetch user when authenticated; clear when logged out.
   ref.listen<AuthState>(authProvider, (prev, next) {

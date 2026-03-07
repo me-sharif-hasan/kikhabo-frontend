@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/shopping_list_pdf_generator.dart';
@@ -24,12 +25,13 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
   bool _hasMorePages = true;
   bool _isDownloadingPdf = false;
   final Set<int> _selectedMealIndices = {};
+  bool _analyticsLogged = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
+
     // Reset pagination state on init to force reload
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -40,6 +42,18 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // GoRouterState.of(context) requires an inherited widget — safe here.
+    if (!_analyticsLogged) {
+      _analyticsLogged = true;
+      AnalyticsService.instance.logScreenView(
+        _isSuggestedMode(context) ? 'meals_suggested' : 'meals_history',
+      );
+    }
   }
 
   @override
@@ -132,9 +146,12 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
         }).toList();
       }
 
-      final file = await ShoppingListPdfGenerator.generateShoppingListPdf(mealsForPdf);
+      final file = await ShoppingListPdfGenerator.generateShoppingListPdf(mealsForPdf, context);
 
       if (file == null) return;
+
+      // Track successful PDF generation
+      AnalyticsService.instance.logPdfGenerated(mealCount: mealsForPdf.length);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

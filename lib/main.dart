@@ -1,6 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'core/services/analytics_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'domain/providers/auth_provider.dart';
@@ -19,7 +21,9 @@ import 'presentation/screens/dashboard/edit_profile_screen.dart';
 import 'data/models/meal.dart';
 
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const ProviderScope(child: KikhaboApp()));
 }
 
@@ -30,15 +34,38 @@ class KikhaboApp extends ConsumerStatefulWidget {
   ConsumerState<KikhaboApp> createState() => _KikhaboAppState();
 }
 
+/// Bridges Riverpod auth state into a ChangeNotifier so GoRouter can
+/// call its redirect callback whenever authentication status changes.
+class _AuthNotifierBridge extends ChangeNotifier {
+  _AuthNotifierBridge();
+  void notify() => notifyListeners();
+}
+
 class _KikhaboAppState extends ConsumerState<KikhaboApp> {
   late final GoRouter _router;
+  late final _AuthNotifierBridge _authBridge;
 
   @override
   void initState() {
     super.initState();
+    _authBridge = _AuthNotifierBridge();
     ref.read(authProvider.notifier).checkAuthStatus();
     _router = GoRouter(
       initialLocation: '/splash',
+      refreshListenable: _authBridge,
+      observers: [AnalyticsService.instance.observer],
+      redirect: (context, state) {
+        final isAuthenticated = ref.read(authProvider).isAuthenticated;
+        final isOnLoginOrRegister = state.matchedLocation == '/' ||
+            state.matchedLocation == '/register' ||
+            state.matchedLocation == '/splash';
+
+        // If logged out and on a protected page, send to login.
+        if (!isAuthenticated && !isOnLoginOrRegister) {
+          return '/';
+        }
+        return null;
+      },
       routes: [
         GoRoute(
           path: '/splash',
@@ -54,57 +81,58 @@ class _KikhaboAppState extends ConsumerState<KikhaboApp> {
         ),
         GoRoute(
           path: '/dashboard',
-          builder: (context, state) => const SizedBox(),
-          redirect: (context, state) {
-            if (state.uri.toString() == '/dashboard') return '/dashboard/home';
-            return null;
+          redirect: (context, state) => '/dashboard/home',
+        ),
+        GoRoute(
+          path: '/dashboard/home',
+          builder: (context, state) => const DashboardScreen(child: HomeScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/meals',
+          builder: (context, state) => const DashboardScreen(child: MealsScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/family',
+          builder: (context, state) => const DashboardScreen(child: ManageFamilyScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/manage_family',
+          builder: (context, state) => const DashboardScreen(child: ManageFamilyScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/preferences',
+          builder: (context, state) => const DashboardScreen(child: ManagePreferencesScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/statistics',
+          builder: (context, state) => const DashboardScreen(child: MealStatisticsScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/meal_details',
+          builder: (context, state) {
+            final meal = state.extra as Meal;
+            return DashboardScreen(child: MealDetailsScreen(meal: meal));
           },
-          routes: [
-            GoRoute(
-              path: 'home',
-              builder: (context, state) => const DashboardScreen(child: HomeScreen()),
-            ),
-            GoRoute(
-              path: 'meals',
-              builder: (context, state) => const DashboardScreen(child: MealsScreen()),
-            ),
-            GoRoute(
-              path: 'family',
-              builder: (context, state) => const DashboardScreen(child: ManageFamilyScreen()),
-            ),
-            GoRoute(
-              path: 'manage_family',
-              builder: (context, state) => const DashboardScreen(child: ManageFamilyScreen()),
-            ),
-            GoRoute(
-              path: 'preferences',
-              builder: (context, state) => const DashboardScreen(child: ManagePreferencesScreen()),
-            ),
-            GoRoute(
-              path: 'statistics',
-              builder: (context, state) => const DashboardScreen(child: MealStatisticsScreen()),
-            ),
-            GoRoute(
-              path: 'meal_details',
-              builder: (context, state) {
-                final meal = state.extra as Meal;
-                return DashboardScreen(child: MealDetailsScreen(meal: meal));
-              },
-            ),
-            GoRoute(
-              path: 'profile',
-              builder: (context, state) => const DashboardScreen(child: ProfileScreen()),
-              routes: [
-                GoRoute(
-                  path: 'edit',
-                  builder: (context, state) => const EditProfileScreen(),
-                ),
-              ],
-            ),
-          ],
+        ),
+        GoRoute(
+          path: '/dashboard/profile',
+          builder: (context, state) => const DashboardScreen(child: ProfileScreen()),
+        ),
+        GoRoute(
+          path: '/dashboard/profile/edit',
+          builder: (context, state) => const EditProfileScreen(),
         ),
       ],
     );
+
+    // Notify GoRouter whenever auth state changes so the redirect runs again.
+    ref.listenManual<AuthState>(authProvider, (_, __) => _authBridge.notify());
+  }
+
+  @override
+  void dispose() {
+    _authBridge.dispose();
+    super.dispose();
   }
 
   @override

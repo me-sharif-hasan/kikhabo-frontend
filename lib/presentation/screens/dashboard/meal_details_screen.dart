@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/models/meal.dart';
@@ -30,6 +31,11 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     super.initState();
     _currentRating = widget.meal.rating?.toInt() ?? 0;
     _currentStatus = widget.meal.mealStatus ?? 'PLANNED';
+    // Track which meal detail screen was opened
+    AnalyticsService.instance.logMealDetailViewed(
+      mealName: widget.meal.mealName,
+      mealId: widget.meal.id,
+    );
     _fetchDetailsIfNeeded();
   }
 
@@ -89,8 +95,13 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
     if (mounted) {
       if (success) {
-        // Invalidate meal history provider to force refresh with updated data
         ref.invalidate(mealHistoryProvider);
+        // Track the status/rating update
+        AnalyticsService.instance.logMealStatusUpdated(
+          status: _currentStatus,
+          rating: _currentRating,
+          mealId: _meal.id,
+        );
       }
       
       _showSnackBar(

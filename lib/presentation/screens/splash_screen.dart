@@ -77,7 +77,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   
   Future<bool> _checkConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('google.com');
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
       return false;

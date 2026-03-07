@@ -20,18 +20,44 @@ import 'presentation/screens/dashboard/profile_screen.dart';
 import 'presentation/screens/dashboard/edit_profile_screen.dart';
 import 'data/models/meal.dart';
 
-
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
   runApp(const ProviderScope(child: KikhaboApp()));
 }
 
-class KikhaboApp extends ConsumerStatefulWidget {
+class KikhaboApp extends StatefulWidget {
   const KikhaboApp({super.key});
 
   @override
-  ConsumerState<KikhaboApp> createState() => _KikhaboAppState();
+  State<KikhaboApp> createState() => _KikhaboAppState();
+}
+
+class _KikhaboAppState extends State<KikhaboApp> {
+  bool _firebaseReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Firebase in the background. runApp() above has already
+    // rendered the first frame (dark scaffold below), satisfying Android's
+    // pre-draw listener immediately.
+    Firebase.initializeApp().then((_) {
+      if (mounted) setState(() => _firebaseReady = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_firebaseReady) {
+      // Dark placeholder drawn on the very first frame — stops the
+      // cancelAndRedraw loop without blocking on Firebase.
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(backgroundColor: Color(0xFF111827)),
+      );
+    }
+    return const _KikhaboRouter();
+  }
 }
 
 /// Bridges Riverpod auth state into a ChangeNotifier so GoRouter can
@@ -41,7 +67,14 @@ class _AuthNotifierBridge extends ChangeNotifier {
   void notify() => notifyListeners();
 }
 
-class _KikhaboAppState extends ConsumerState<KikhaboApp> {
+class _KikhaboRouter extends ConsumerStatefulWidget {
+  const _KikhaboRouter();
+
+  @override
+  ConsumerState<_KikhaboRouter> createState() => _KikhaboRouterState();
+}
+
+class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
   late final GoRouter _router;
   late final _AuthNotifierBridge _authBridge;
 
@@ -49,7 +82,6 @@ class _KikhaboAppState extends ConsumerState<KikhaboApp> {
   void initState() {
     super.initState();
     _authBridge = _AuthNotifierBridge();
-    ref.read(authProvider.notifier).checkAuthStatus();
     _router = GoRouter(
       initialLocation: '/splash',
       refreshListenable: _authBridge,

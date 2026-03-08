@@ -9,6 +9,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/api_error_handler.dart';
 import '../../../data/models/meal.dart';
 import '../../../domain/providers/meal_provider.dart';
+import '../../../domain/providers/ingredient_scan_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_slider.dart';
@@ -69,6 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _generateMealPlan() async {
     final totalMealCount = (_daysCount * _mealsPerDay).toInt();
+    final scanned = ref.read(scannedIngredientsProvider);
 
     AnalyticsService.instance.logButtonTap(
       buttonId: 'generate_meal_plan',
@@ -83,6 +85,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       totalMealCount: totalMealCount,
       mealPerDay: _mealsPerDay.toInt(),
       agesOfTheMembers: [24],
+      availableIngredients:
+          scanned.isEmpty ? null : scanned.map((e) => e.toJson()).toList(),
     );
 
     setState(() => _isGenerating = true);
@@ -133,9 +137,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Widget _buildScannedIngredientsBanner(List<ScannedIngredient> ingredients) {
+    return GlassCard(
+      blur: 12,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.camera_alt_rounded,
+                  size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Available Ingredients (Scanned)',
+                  style: AppTextStyles.bodyLarge
+                      .copyWith(color: AppColors.primary),
+                ),
+              ),
+              GestureDetector(
+                onTap: () =>
+                    ref.read(scannedIngredientsProvider.notifier).clear(),
+                child: Icon(Icons.close,
+                    size: 18, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: ingredients
+                .map(
+                  (ing) => Chip(
+                    label: Text(
+                      ing.quantity.isNotEmpty
+                          ? '${ing.name} · ${ing.quantity}'
+                          : ing.name,
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textPrimary)),
+                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    side: BorderSide(
+                        color: AppColors.primary.withOpacity(0.4)),
+                    padding: EdgeInsets.zero,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'These ingredients will be considered in your next meal plan.',
+            style:
+                AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(themeProvider);
+    final scannedIngredients = ref.watch(scannedIngredientsProvider);
     return PopScope(
       canPop: !_isGenerating,
       child: SafeArea(
@@ -144,6 +209,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             children: [
               const SizedBox(height: 60),
+
+              // Scanned ingredients banner (visible only after a scan)
+              if (scannedIngredients.isNotEmpty)
+                _buildScannedIngredientsBanner(scannedIngredients),
 
               // Header Section
               GlassCard(

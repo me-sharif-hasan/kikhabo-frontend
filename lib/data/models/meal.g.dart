@@ -65,6 +65,9 @@ _MealPreferenceDto _$MealPreferenceDtoFromJson(Map<String, dynamic> json) =>
       agesOfTheMembers: (json['agesOfTheMembers'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
+      availableIngredients: (json['availableIngredients'] as List<dynamic>?)
+          ?.map((e) => Map<String, String>.from(e as Map))
+          .toList(),
     );
 
 Map<String, dynamic> _$MealPreferenceDtoToJson(_MealPreferenceDto instance) =>
@@ -76,6 +79,7 @@ Map<String, dynamic> _$MealPreferenceDtoToJson(_MealPreferenceDto instance) =>
       'totalMealCount': instance.totalMealCount,
       'mealPerDay': instance.mealPerDay,
       'agesOfTheMembers': instance.agesOfTheMembers,
+      'availableIngredients': instance.availableIngredients,
     };
 
 _MealRatingStatusDto _$MealRatingStatusDtoFromJson(Map<String, dynamic> json) =>

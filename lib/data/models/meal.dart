@@ -47,6 +47,7 @@ abstract class MealPreferenceDto with _$MealPreferenceDto {
     required int totalMealCount,
     required int mealPerDay,
     required List<int> agesOfTheMembers,
+    List<Map<String, String>>? availableIngredients,
   }) = _MealPreferenceDto;
 
   factory MealPreferenceDto.fromJson(Map<String, dynamic> json) => _$MealPreferenceDtoFromJson(json);

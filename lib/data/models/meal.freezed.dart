@@ -536,7 +536,9 @@ class _Meal implements Meal {
 @override final  String? userNote;
 // User's feedback/note
 @override final  int? timestamp;
+// From meal history API
  final  List<String>? _youtubeSearchTerms;
+// From meal history API
 @override List<String>? get youtubeSearchTerms {
   final value = _youtubeSearchTerms;
   if (value == null) return null;
@@ -544,6 +546,7 @@ class _Meal implements Meal {
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(value);
 }
+
 
 /// Create a copy of Meal
 /// with the given fields replaced by the non-null parameter values.
@@ -620,7 +623,7 @@ as List<String>?,
 /// @nodoc
 mixin _$MealPreferenceDto {
 
- double get spicyRating; double get saltRating; int get dayCount; double get priceRating; int get totalMealCount; int get mealPerDay; List<int> get agesOfTheMembers;
+ double get spicyRating; double get saltRating; int get dayCount; double get priceRating; int get totalMealCount; int get mealPerDay; List<int> get agesOfTheMembers; List<Map<String, String>>? get availableIngredients;
 /// Create a copy of MealPreferenceDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -633,16 +636,16 @@ $MealPreferenceDtoCopyWith<MealPreferenceDto> get copyWith => _$MealPreferenceDt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MealPreferenceDto&&(identical(other.spicyRating, spicyRating) || other.spicyRating == spicyRating)&&(identical(other.saltRating, saltRating) || other.saltRating == saltRating)&&(identical(other.dayCount, dayCount) || other.dayCount == dayCount)&&(identical(other.priceRating, priceRating) || other.priceRating == priceRating)&&(identical(other.totalMealCount, totalMealCount) || other.totalMealCount == totalMealCount)&&(identical(other.mealPerDay, mealPerDay) || other.mealPerDay == mealPerDay)&&const DeepCollectionEquality().equals(other.agesOfTheMembers, agesOfTheMembers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MealPreferenceDto&&(identical(other.spicyRating, spicyRating) || other.spicyRating == spicyRating)&&(identical(other.saltRating, saltRating) || other.saltRating == saltRating)&&(identical(other.dayCount, dayCount) || other.dayCount == dayCount)&&(identical(other.priceRating, priceRating) || other.priceRating == priceRating)&&(identical(other.totalMealCount, totalMealCount) || other.totalMealCount == totalMealCount)&&(identical(other.mealPerDay, mealPerDay) || other.mealPerDay == mealPerDay)&&const DeepCollectionEquality().equals(other.agesOfTheMembers, agesOfTheMembers)&&const DeepCollectionEquality().equals(other.availableIngredients, availableIngredients));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,spicyRating,saltRating,dayCount,priceRating,totalMealCount,mealPerDay,const DeepCollectionEquality().hash(agesOfTheMembers));
+int get hashCode => Object.hash(runtimeType,spicyRating,saltRating,dayCount,priceRating,totalMealCount,mealPerDay,const DeepCollectionEquality().hash(agesOfTheMembers),const DeepCollectionEquality().hash(availableIngredients));
 
 @override
 String toString() {
-  return 'MealPreferenceDto(spicyRating: $spicyRating, saltRating: $saltRating, dayCount: $dayCount, priceRating: $priceRating, totalMealCount: $totalMealCount, mealPerDay: $mealPerDay, agesOfTheMembers: $agesOfTheMembers)';
+  return 'MealPreferenceDto(spicyRating: $spicyRating, saltRating: $saltRating, dayCount: $dayCount, priceRating: $priceRating, totalMealCount: $totalMealCount, mealPerDay: $mealPerDay, agesOfTheMembers: $agesOfTheMembers, availableIngredients: $availableIngredients)';
 }
 
 
@@ -653,7 +656,7 @@ abstract mixin class $MealPreferenceDtoCopyWith<$Res>  {
   factory $MealPreferenceDtoCopyWith(MealPreferenceDto value, $Res Function(MealPreferenceDto) _then) = _$MealPreferenceDtoCopyWithImpl;
 @useResult
 $Res call({
- double spicyRating, double saltRating, int dayCount, double priceRating, int totalMealCount, int mealPerDay, List<int> agesOfTheMembers
+ double spicyRating, double saltRating, int dayCount, double priceRating, int totalMealCount, int mealPerDay, List<int> agesOfTheMembers, List<Map<String, String>>? availableIngredients
 });
 
 
@@ -670,7 +673,7 @@ class _$MealPreferenceDtoCopyWithImpl<$Res>
 
 /// Create a copy of MealPreferenceDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? spicyRating = null,Object? saltRating = null,Object? dayCount = null,Object? priceRating = null,Object? totalMealCount = null,Object? mealPerDay = null,Object? agesOfTheMembers = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? spicyRating = null,Object? saltRating = null,Object? dayCount = null,Object? priceRating = null,Object? totalMealCount = null,Object? mealPerDay = null,Object? agesOfTheMembers = null,Object? availableIngredients = freezed,}) {
   return _then(_self.copyWith(
 spicyRating: null == spicyRating ? _self.spicyRating : spicyRating // ignore: cast_nullable_to_non_nullable
 as double,saltRating: null == saltRating ? _self.saltRating : saltRating // ignore: cast_nullable_to_non_nullable
@@ -679,7 +682,8 @@ as int,priceRating: null == priceRating ? _self.priceRating : priceRating // ign
 as double,totalMealCount: null == totalMealCount ? _self.totalMealCount : totalMealCount // ignore: cast_nullable_to_non_nullable
 as int,mealPerDay: null == mealPerDay ? _self.mealPerDay : mealPerDay // ignore: cast_nullable_to_non_nullable
 as int,agesOfTheMembers: null == agesOfTheMembers ? _self.agesOfTheMembers : agesOfTheMembers // ignore: cast_nullable_to_non_nullable
-as List<int>,
+as List<int>,availableIngredients: freezed == availableIngredients ? _self.availableIngredients : availableIngredients // ignore: cast_nullable_to_non_nullable
+as List<Map<String, String>>?,
   ));
 }
 
@@ -764,10 +768,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers,  List<Map<String, String>>? availableIngredients)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MealPreferenceDto() when $default != null:
-return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers);case _:
+return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers,_that.availableIngredients);case _:
   return orElse();
 
 }
@@ -785,10 +789,10 @@ return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers,  List<Map<String, String>>? availableIngredients)  $default,) {final _that = this;
 switch (_that) {
 case _MealPreferenceDto():
-return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers);case _:
+return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers,_that.availableIngredients);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -805,10 +809,10 @@ return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double spicyRating,  double saltRating,  int dayCount,  double priceRating,  int totalMealCount,  int mealPerDay,  List<int> agesOfTheMembers,  List<Map<String, String>>? availableIngredients)?  $default,) {final _that = this;
 switch (_that) {
 case _MealPreferenceDto() when $default != null:
-return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers);case _:
+return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRating,_that.totalMealCount,_that.mealPerDay,_that.agesOfTheMembers,_that.availableIngredients);case _:
   return null;
 
 }
@@ -820,7 +824,7 @@ return $default(_that.spicyRating,_that.saltRating,_that.dayCount,_that.priceRat
 @JsonSerializable()
 
 class _MealPreferenceDto implements MealPreferenceDto {
-  const _MealPreferenceDto({required this.spicyRating, required this.saltRating, required this.dayCount, required this.priceRating, required this.totalMealCount, required this.mealPerDay, required final  List<int> agesOfTheMembers}): _agesOfTheMembers = agesOfTheMembers;
+  const _MealPreferenceDto({required this.spicyRating, required this.saltRating, required this.dayCount, required this.priceRating, required this.totalMealCount, required this.mealPerDay, required final  List<int> agesOfTheMembers, final  List<Map<String, String>>? availableIngredients}): _agesOfTheMembers = agesOfTheMembers,_availableIngredients = availableIngredients;
   factory _MealPreferenceDto.fromJson(Map<String, dynamic> json) => _$MealPreferenceDtoFromJson(json);
 
 @override final  double spicyRating;
@@ -834,6 +838,15 @@ class _MealPreferenceDto implements MealPreferenceDto {
   if (_agesOfTheMembers is EqualUnmodifiableListView) return _agesOfTheMembers;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_agesOfTheMembers);
+}
+
+ final  List<Map<String, String>>? _availableIngredients;
+@override List<Map<String, String>>? get availableIngredients {
+  final value = _availableIngredients;
+  if (value == null) return null;
+  if (_availableIngredients is EqualUnmodifiableListView) return _availableIngredients;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
 }
 
 
@@ -850,16 +863,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MealPreferenceDto&&(identical(other.spicyRating, spicyRating) || other.spicyRating == spicyRating)&&(identical(other.saltRating, saltRating) || other.saltRating == saltRating)&&(identical(other.dayCount, dayCount) || other.dayCount == dayCount)&&(identical(other.priceRating, priceRating) || other.priceRating == priceRating)&&(identical(other.totalMealCount, totalMealCount) || other.totalMealCount == totalMealCount)&&(identical(other.mealPerDay, mealPerDay) || other.mealPerDay == mealPerDay)&&const DeepCollectionEquality().equals(other._agesOfTheMembers, _agesOfTheMembers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MealPreferenceDto&&(identical(other.spicyRating, spicyRating) || other.spicyRating == spicyRating)&&(identical(other.saltRating, saltRating) || other.saltRating == saltRating)&&(identical(other.dayCount, dayCount) || other.dayCount == dayCount)&&(identical(other.priceRating, priceRating) || other.priceRating == priceRating)&&(identical(other.totalMealCount, totalMealCount) || other.totalMealCount == totalMealCount)&&(identical(other.mealPerDay, mealPerDay) || other.mealPerDay == mealPerDay)&&const DeepCollectionEquality().equals(other._agesOfTheMembers, _agesOfTheMembers)&&const DeepCollectionEquality().equals(other._availableIngredients, _availableIngredients));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,spicyRating,saltRating,dayCount,priceRating,totalMealCount,mealPerDay,const DeepCollectionEquality().hash(_agesOfTheMembers));
+int get hashCode => Object.hash(runtimeType,spicyRating,saltRating,dayCount,priceRating,totalMealCount,mealPerDay,const DeepCollectionEquality().hash(_agesOfTheMembers),const DeepCollectionEquality().hash(_availableIngredients));
 
 @override
 String toString() {
-  return 'MealPreferenceDto(spicyRating: $spicyRating, saltRating: $saltRating, dayCount: $dayCount, priceRating: $priceRating, totalMealCount: $totalMealCount, mealPerDay: $mealPerDay, agesOfTheMembers: $agesOfTheMembers)';
+  return 'MealPreferenceDto(spicyRating: $spicyRating, saltRating: $saltRating, dayCount: $dayCount, priceRating: $priceRating, totalMealCount: $totalMealCount, mealPerDay: $mealPerDay, agesOfTheMembers: $agesOfTheMembers, availableIngredients: $availableIngredients)';
 }
 
 
@@ -870,7 +883,7 @@ abstract mixin class _$MealPreferenceDtoCopyWith<$Res> implements $MealPreferenc
   factory _$MealPreferenceDtoCopyWith(_MealPreferenceDto value, $Res Function(_MealPreferenceDto) _then) = __$MealPreferenceDtoCopyWithImpl;
 @override @useResult
 $Res call({
- double spicyRating, double saltRating, int dayCount, double priceRating, int totalMealCount, int mealPerDay, List<int> agesOfTheMembers
+ double spicyRating, double saltRating, int dayCount, double priceRating, int totalMealCount, int mealPerDay, List<int> agesOfTheMembers, List<Map<String, String>>? availableIngredients
 });
 
 
@@ -887,7 +900,7 @@ class __$MealPreferenceDtoCopyWithImpl<$Res>
 
 /// Create a copy of MealPreferenceDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? spicyRating = null,Object? saltRating = null,Object? dayCount = null,Object? priceRating = null,Object? totalMealCount = null,Object? mealPerDay = null,Object? agesOfTheMembers = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? spicyRating = null,Object? saltRating = null,Object? dayCount = null,Object? priceRating = null,Object? totalMealCount = null,Object? mealPerDay = null,Object? agesOfTheMembers = null,Object? availableIngredients = freezed,}) {
   return _then(_MealPreferenceDto(
 spicyRating: null == spicyRating ? _self.spicyRating : spicyRating // ignore: cast_nullable_to_non_nullable
 as double,saltRating: null == saltRating ? _self.saltRating : saltRating // ignore: cast_nullable_to_non_nullable
@@ -896,7 +909,8 @@ as int,priceRating: null == priceRating ? _self.priceRating : priceRating // ign
 as double,totalMealCount: null == totalMealCount ? _self.totalMealCount : totalMealCount // ignore: cast_nullable_to_non_nullable
 as int,mealPerDay: null == mealPerDay ? _self.mealPerDay : mealPerDay // ignore: cast_nullable_to_non_nullable
 as int,agesOfTheMembers: null == agesOfTheMembers ? _self._agesOfTheMembers : agesOfTheMembers // ignore: cast_nullable_to_non_nullable
-as List<int>,
+as List<int>,availableIngredients: freezed == availableIngredients ? _self._availableIngredients : availableIngredients // ignore: cast_nullable_to_non_nullable
+as List<Map<String, String>>?,
   ));
 }
 

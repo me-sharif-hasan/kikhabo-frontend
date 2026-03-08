@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Ki Khabo uses your camera to scan your fridge or vegetable cart and identify ingredients for meal suggestions.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ki Khabo accesses your photos to scan ingredients for meal suggestions.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

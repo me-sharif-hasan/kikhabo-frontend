@@ -21,6 +21,7 @@ import 'presentation/screens/dashboard/meal_details_screen.dart';
 import 'presentation/screens/dashboard/profile_screen.dart';
 import 'presentation/screens/dashboard/edit_profile_screen.dart';
 import 'presentation/screens/onboarding_screen.dart';
+import 'presentation/screens/dashboard/fridge_scan_screen.dart';
 import 'data/models/meal.dart';
 
 void main() {
@@ -161,6 +162,10 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         GoRoute(
           path: '/dashboard/profile/edit',
           builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/dashboard/fridge_scan',
+          builder: (context, state) => const FridgeScanScreen(),
         ),
       ],
     );

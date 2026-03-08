@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/analytics_models.dart';
 import '../../../domain/providers/analytics_provider.dart';
 import '../../widgets/simple_bar_chart.dart';
@@ -33,6 +34,7 @@ class _MealStatisticsScreenState extends ConsumerState<MealStatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(themeProvider);
     final energyAsync = ref.watch(energyAnalyticsProvider(_currentParams));
     final costAsync = ref.watch(costAnalyticsProvider(_currentParams));
 
@@ -122,7 +124,7 @@ class _MealStatisticsScreenState extends ConsumerState<MealStatisticsScreen> {
                                 data: data,
                                 period: _selectedPeriod,
                               ),
-                              loading: () => const Center(
+                              loading: () => Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.primary,
                                 ),
@@ -174,7 +176,7 @@ class _MealStatisticsScreenState extends ConsumerState<MealStatisticsScreen> {
                                 data: data,
                                 period: _selectedPeriod,
                               ),
-                              loading: () => const Center(
+                              loading: () => Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.primary,
                                 ),

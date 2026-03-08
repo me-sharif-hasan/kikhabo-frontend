@@ -66,7 +66,7 @@ class _AddFamilyMemberModalState extends ConsumerState<AddFamilyMemberModal> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 8),
@@ -101,8 +101,8 @@ class _AddFamilyMemberModalState extends ConsumerState<AddFamilyMemberModal> {
                 ),
               ),
             if (isSearching)
-              const Padding(
-                padding: EdgeInsets.only(top: 40),
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
             
@@ -182,9 +182,9 @@ class _AddFamilyMemberModalState extends ConsumerState<AddFamilyMemberModal> {
                                   ),
                                 ],
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.add,
-                                color: Colors.white,
+                                color: AppColors.current.isDark ? Colors.white : AppColors.glassText,
                                 size: 24,
                               ),
                             ),

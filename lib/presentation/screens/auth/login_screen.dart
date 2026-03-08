@@ -72,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Liquid Glass Background Gradient
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.bgGradient1,
         ),
         child: Stack(
@@ -120,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.restaurant_menu_rounded,
                         size: 60,
                         color: AppColors.primaryLight,

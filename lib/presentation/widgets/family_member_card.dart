@@ -53,7 +53,9 @@ class FamilyMemberCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       (member.firstName?.substring(0, 1) ?? 'U').toUpperCase(),
-                      style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.current.isDark ? Colors.white : AppColors.glassText,
+                      ),
                     ),
                   ),
                 ),
@@ -74,7 +76,7 @@ class FamilyMemberCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                  icon: Icon(Icons.delete_outline_rounded, color: AppColors.error),
                   onPressed: onDelete,
                   tooltip: 'Remove Member',
                 ),

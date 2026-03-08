@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../domain/providers/user_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_text_field.dart';
@@ -155,6 +156,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(themeProvider);
     final isLoading = ref.watch(userProvider).isLoading;
 
     return Scaffold(
@@ -163,7 +165,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text('Edit Profile', style: AppTextStyles.headlineSmall),
@@ -350,13 +352,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         enabledBorder: border,
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppColors.primaryLight),
+          borderSide: BorderSide(color: AppColors.primaryLight),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       dropdownColor: AppColors.surface,
-      style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
       icon: Icon(Icons.keyboard_arrow_down_rounded,
           color: AppColors.textSecondary),
       items: items

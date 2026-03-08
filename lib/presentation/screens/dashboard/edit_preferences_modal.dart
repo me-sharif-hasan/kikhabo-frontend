@@ -72,7 +72,7 @@ class _EditPreferencesModalState extends State<EditPreferencesModal> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: AppColors.textPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 8),

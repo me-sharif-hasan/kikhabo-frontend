@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/meal.dart';
 import '../../../domain/providers/meal_provider.dart';
 import '../../widgets/glass_card.dart';
@@ -123,6 +124,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(themeProvider);
     final hasGroceries = _meal.groceries != null && _meal.groceries!.isNotEmpty;
     final hasGroceryNames = _meal.groceryNames != null && _meal.groceryNames!.isNotEmpty;
 
@@ -132,7 +134,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -163,7 +165,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                         ),
                         const SizedBox(width: 8),
                         if (_isLoadingDetails)
-                          const SizedBox(
+                          SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(

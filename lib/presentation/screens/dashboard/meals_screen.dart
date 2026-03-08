@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/shopping_list_pdf_generator.dart';
 import '../../../data/models/meal.dart';
 import '../../../domain/providers/meal_provider.dart';
@@ -120,15 +121,17 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-  Future<void> _downloadShoppingListPdf(List<Meal> meals) async {
+  Future<void> _downloadShoppingListPdf(List<Meal> meals, {bool fetchDetails = true}) async {
     setState(() {
       _isDownloadingPdf = true;
     });
 
     try {
-      // Fetch full details (with grocery amounts) for all meals that have IDs.
-      // This applies to both history and suggested meals to keep data consistent.
-      final ids = meals.map((m) => m.id).whereType<int>().toList();
+      // For suggested meals, groceries (with amounts) are already present from
+      // the planning API — skip the history-details fetch which uses different IDs.
+      final ids = fetchDetails
+          ? meals.map((m) => m.id).whereType<int>().toList()
+          : <int>[];
       List<Meal> mealsForPdf = meals;
 
       if (ids.isNotEmpty) {
@@ -182,6 +185,7 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    ref.watch(themeProvider);
     final isSuggested = _isSuggestedMode(context);
     
     // Get suggested meals from planning provider
@@ -237,7 +241,7 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                 isPaginated: true,
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            loading: () => Center(child: CircularProgressIndicator(color: AppColors.primary)),
             error: (error, stack) {
               // On error, fallback to suggested meals
               return _buildMealsList(
@@ -285,7 +289,7 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                 if (meals.isNotEmpty)
                   IconButton(
                     icon: _isDownloadingPdf
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
@@ -296,14 +300,14 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                         : Stack(
                             clipBehavior: Clip.none,
                             children: [
-                              const Icon(Icons.picture_as_pdf, color: AppColors.accent),
+                              Icon(Icons.picture_as_pdf, color: AppColors.accent),
                               if (isPaginated && _selectedMealIndices.isNotEmpty)
                                 Positioned(
                                   right: -6,
                                   top: -6,
                                   child: Container(
                                     padding: const EdgeInsets.all(3),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: AppColors.primary,
                                       shape: BoxShape.circle,
                                     ),
@@ -337,7 +341,7 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                                   .toList();
                               _downloadShoppingListPdf(selectedMeals);
                             } else {
-                              _downloadShoppingListPdf(meals);
+                              _downloadShoppingListPdf(meals, fetchDetails: false);
                             }
                           },
                     tooltip: isPaginated
@@ -381,8 +385,8 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                   itemBuilder: (context, index) {
                     if (index == meals.length) {
                       // Loading indicator at bottom
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
                         child: Center(
                           child: CircularProgressIndicator(
                             color: AppColors.primary,

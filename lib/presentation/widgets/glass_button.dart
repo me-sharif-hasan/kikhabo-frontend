@@ -33,6 +33,9 @@ class GlassButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isProgress = progress != null;
+    // On primary/solid backgrounds white always works; on light gradients use dark text.
+    final textColor =
+        AppColors.current.isDark ? Colors.white : AppColors.glassText;
 
     return Container(
       width: width ?? double.infinity,
@@ -54,6 +57,7 @@ class GlassButton extends StatelessWidget {
               progress: progress!,
               gradient: gradient,
               label: _progressLabel(progress!),
+              textColor: textColor,
             )
           : ElevatedButton(
               onPressed: isLoading ? null : onPressed,
@@ -65,11 +69,11 @@ class GlassButton extends StatelessWidget {
                 ),
               ),
               child: isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: textColor,
                         strokeWidth: 2,
                       ),
                     )
@@ -78,7 +82,7 @@ class GlassButton extends StatelessWidget {
                       style: AppTextStyles.labelLarge.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
             ),
@@ -90,11 +94,13 @@ class _ProgressFill extends StatelessWidget {
   final double progress;
   final Gradient? gradient;
   final String label;
+  final Color textColor;
 
   const _ProgressFill({
     required this.progress,
     required this.gradient,
     required this.label,
+    required this.textColor,
   });
 
   @override
@@ -137,7 +143,7 @@ class _ProgressFill extends StatelessWidget {
               style: AppTextStyles.labelLarge.copyWith(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: textColor,
               ),
             ),
           ),

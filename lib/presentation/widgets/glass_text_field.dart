@@ -55,7 +55,7 @@ class GlassTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppColors.primaryLight),
+          borderSide: BorderSide(color: AppColors.primaryLight),
         ),
         errorStyle: AppTextStyles.labelSmall.copyWith(color: AppColors.error),
       ),

@@ -51,6 +51,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // subscribe to theme changes so colors update
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -74,7 +75,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                            Text('Track your nutrition and spending', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
                          ],
                       ),
-                      const Icon(Icons.analytics_outlined, color: Colors.white54, size: 32)
+                      Icon(Icons.analytics_outlined, color: AppColors.textSecondary, size: 32)
                     ],
                   ),
                 ),
@@ -103,9 +104,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 showTitles: true,
                                 getTitlesWidget: (value, meta) {
                                   switch (value.toInt()) {
-                                    case 1: return const Text('Mon', style: TextStyle(color: Colors.white54, fontSize: 10));
-                                    case 4: return const Text('Thu', style: TextStyle(color: Colors.white54, fontSize: 10));
-                                    case 7: return const Text('Sun', style: TextStyle(color: Colors.white54, fontSize: 10));
+                                    case 1: return Text('Mon', style: TextStyle(color: AppColors.textSecondary, fontSize: 10));
+                                    case 4: return Text('Thu', style: TextStyle(color: AppColors.textSecondary, fontSize: 10));
+                                    case 7: return Text('Sun', style: TextStyle(color: AppColors.textSecondary, fontSize: 10));
                                   }
                                   return const SizedBox.shrink();
                                 },
@@ -117,7 +118,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             LineChartBarData(
                               spots: _calorieData,
                               isCurved: true,
-                              gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
+                              gradient: LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
                               barWidth: 4,
                               isStrokeCapRound: true,
                               dotData: const FlDotData(show: false),
@@ -176,7 +177,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 getTitlesWidget: (value, meta) {
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text('Week ${value.toInt() + 1}', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                    child: Text('Week ${value.toInt() + 1}', style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
                                   );
                                 },
                               ),

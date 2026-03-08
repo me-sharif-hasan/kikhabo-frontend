@@ -139,7 +139,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               isExpanded: true,
               dropdownColor: AppColors.surface,
               style: AppTextStyles.bodyLarge,
-              icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
+              icon: Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
               onChanged: onChanged,
               items: items.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
@@ -158,7 +158,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.bgGradient1,
         ),
         child: SafeArea(
@@ -231,7 +231,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                                 controller: _dobController,
                                 hintText: 'YYYY-MM-DD',
                                 labelText: 'Date of Birth',
-                                suffixIcon: const Icon(Icons.calendar_today, color: AppColors.primaryLight),
+                                suffixIcon: Icon(Icons.calendar_today, color: AppColors.primaryLight),
                                 validator: (v) => Validators.validateRequired(v, 'DOB'),
                               ),
                             ),

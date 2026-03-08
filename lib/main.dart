@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/services/analytics_service.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/constants/app_constants.dart';
 import 'domain/providers/auth_provider.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -175,9 +177,11 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
 
   @override
   Widget build(BuildContext context) {
+    final themeType = ref.watch(themeProvider);
+    AppColors.current = AppColors.paletteFor(themeType);
     return MaterialApp.router(
       title: AppConstants.appName,
-      theme: AppTheme.liquidGlassTheme,
+      theme: AppTheme.forType(themeType),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );

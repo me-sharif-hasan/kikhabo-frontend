@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../domain/providers/family_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/family_member_card.dart';
@@ -12,6 +13,7 @@ class ManageFamilyScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(themeProvider);
     final familyState = ref.watch(familyProvider);
     final familyMembers = familyState.familyMembers;
     final isLoading = familyState.isLoading;
@@ -46,7 +48,7 @@ class ManageFamilyScreen extends ConsumerWidget {
                         border: Border.all(color: AppColors.primary.withOpacity(0.4)),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.add, color: AppColors.primaryLight),
+                        icon: Icon(Icons.add, color: AppColors.primaryLight),
                         onPressed: () {
                            showDialog(
                              context: context,
@@ -62,7 +64,7 @@ class ManageFamilyScreen extends ConsumerWidget {
             ),
             Expanded(
               child: isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : familyMembers.isEmpty
                   ? Center(
                       child: GlassCard(
@@ -112,7 +114,7 @@ class ManageFamilyScreen extends ConsumerWidget {
                                         );
                                       }
                                     }, 
-                                    child: const Text('Remove', style: TextStyle(color: AppColors.error))
+                                    child: Text('Remove', style: TextStyle(color: AppColors.error))
                                   ),
                                 ],
                               ),

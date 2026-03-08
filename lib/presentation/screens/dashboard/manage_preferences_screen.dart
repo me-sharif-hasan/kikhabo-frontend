@@ -43,6 +43,7 @@ class _ManagePreferencesScreenState extends State<ManagePreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // subscribe to theme changes so colors update
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(

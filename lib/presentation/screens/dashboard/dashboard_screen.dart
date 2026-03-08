@@ -48,11 +48,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             tooltip: 'Change theme',
             onPressed: () => _showThemePicker(context),
           ),
-          IconButton(
-            icon: Icon(Icons.camera_alt_rounded, color: AppColors.textPrimary),
-            tooltip: 'Scan fridge / cart',
-            onPressed: () => context.push('/dashboard/fridge_scan'),
-          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(

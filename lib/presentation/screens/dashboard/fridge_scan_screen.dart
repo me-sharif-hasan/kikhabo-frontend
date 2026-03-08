@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,41 +21,13 @@ class FridgeScanScreen extends ConsumerStatefulWidget {
 
 enum _ScanState { idle, analyzing, results }
 
-class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
-    with SingleTickerProviderStateMixin {
+class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
   File? _imageFile;
   _ScanState _scanState = _ScanState.idle;
   List<_DetectedItem> _items = [];
   Set<int> _selectedIndices = {};
   String? _errorMessage;
   final _picker = ImagePicker();
-  late final AnimationController _chipAnim;
-
-  // Predefined overlay chip positions as fractions of image (left, top).
-  static const _overlayPositions = [
-    Offset(0.05, 0.07),
-    Offset(0.55, 0.04),
-    Offset(0.62, 0.38),
-    Offset(0.04, 0.52),
-    Offset(0.28, 0.68),
-    Offset(0.62, 0.70),
-    Offset(0.34, 0.26),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _chipAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-  }
-
-  @override
-  void dispose() {
-    _chipAnim.dispose();
-    super.dispose();
-  }
 
   // ── Image picking ──────────────────────────────────────────────────────────
 
@@ -115,7 +86,6 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
         _selectedIndices = Set.from(List.generate(items.length, (i) => i));
         _scanState = _ScanState.results;
       });
-      _chipAnim.forward(from: 0);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -130,6 +100,19 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     }
+  }
+
+  // ── Delete item ────────────────────────────────────────────────────────────
+
+  void _deleteItem(int index) {
+    setState(() {
+      _items.removeAt(index);
+      // Rebuild selected indices from scratch to keep them contiguous
+      _selectedIndices = _selectedIndices
+          .where((i) => i != index)
+          .map((i) => i > index ? i - 1 : i)
+          .toSet();
+    });
   }
 
   // ── Include in suggestions ─────────────────────────────────────────────────
@@ -248,13 +231,13 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.12),
+                      color: AppColors.error.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       _errorMessage!,
-                      style:
-                          TextStyle(color: Colors.red.shade300, fontSize: 12),
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.error),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -281,12 +264,13 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
   // ── Analyzing ───────────────────────────────────────────────────────────────
 
   Widget _buildAnalyzing() {
+    final cs = Theme.of(context).colorScheme;
     return Stack(
       children: [
         if (_imageFile != null)
           Positioned.fill(child: Image.file(_imageFile!, fit: BoxFit.cover)),
         Container(
-          color: Colors.black.withValues(alpha: 0.55),
+          color: cs.scrim.withValues(alpha: 0.55),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -295,8 +279,8 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
                 const SizedBox(height: 20),
                 Text(
                   'Identifying ingredients...',
-                  style:
-                      AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+                  style: AppTextStyles.bodyLarge
+                      .copyWith(color: cs.onInverseSurface),
                 ),
               ],
             ),
@@ -313,19 +297,19 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
 
     return Column(
       children: [
-        // Annotated image
-        Expanded(
-          flex: 6,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: _buildAnnotatedImage(),
+        // Photo preview — no overlays
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Image.file(_imageFile!, fit: BoxFit.cover),
             ),
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
         if (!hasItems)
           Padding(
@@ -355,51 +339,91 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
           ),
           const SizedBox(height: 6),
 
-          // Scrollable filter chips
-          SizedBox(
-            height: 44,
+          // Scrollable ingredient list with toggle + delete
+          Expanded(
             child: ListView.builder(
-              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
               itemBuilder: (_, i) {
                 final item = _items[i];
                 final selected = _selectedIndices.contains(i);
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      item.quantity.isNotEmpty
-                          ? '${item.name}  ·  ${item.quantity}'
-                          : item.name,
-                      style: TextStyle(
-                        color: selected
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                        fontSize: 12,
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => setState(() {
+                        if (selected) {
+                          _selectedIndices.remove(i);
+                        } else {
+                          _selectedIndices.add(i);
+                        }
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : AppColors.glass,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.primary
+                                : AppColors.glassBorder,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              selected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              size: 20,
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (item.quantity.isNotEmpty)
+                                    Text(
+                                      item.quantity,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.textSecondary),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline_rounded,
+                                  size: 18, color: AppColors.textSecondary),
+                              onPressed: () => _deleteItem(i),
+                              tooltip: 'Remove',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    selected: selected,
-                    onSelected: (val) => setState(() {
-                      if (val) {
-                        _selectedIndices.add(i);
-                      } else {
-                        _selectedIndices.remove(i);
-                      }
-                    }),
-                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                    checkmarkColor: AppColors.primary,
-                    backgroundColor: AppColors.glass,
-                    side: BorderSide(
-                      color: selected
-                          ? AppColors.primary
-                          : AppColors.glassBorder,
                     ),
                   ),
                 );
               },
             ),
           ),
+
           const SizedBox(height: 10),
 
           Padding(
@@ -415,153 +439,6 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen>
         ],
         const SizedBox(height: 16),
       ],
-    );
-  }
-
-  Widget _buildAnnotatedImage() {
-    return LayoutBuilder(builder: (context, constraints) {
-      final w = constraints.maxWidth;
-      final h = constraints.maxHeight;
-      final overlayCount = min(_items.length, _overlayPositions.length);
-
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.file(_imageFile!, fit: BoxFit.cover),
-
-          // Bottom scrim
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: h * 0.28,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.6),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Animated label chips on image
-          ...List.generate(overlayCount, (i) {
-            final pos = _overlayPositions[i];
-            final item = _items[i];
-            final selected = _selectedIndices.contains(i);
-
-            return Positioned(
-              left: pos.dx * w,
-              top: pos.dy * h,
-              child: _AnimatedChip(
-                controller: _chipAnim,
-                delay: i * 0.09,
-                child: GestureDetector(
-                  onTap: () => setState(() {
-                    if (selected) {
-                      _selectedIndices.remove(i);
-                    } else {
-                      _selectedIndices.add(i);
-                    }
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.primary.withValues(alpha: 0.88)
-                          : Colors.black.withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.primaryLight
-                            : Colors.white30,
-                        width: 1.2,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (selected)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 4),
-                            child: Icon(Icons.check_circle,
-                                size: 12, color: Colors.white),
-                          ),
-                        Text(
-                          item.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (item.quantity.isNotEmpty) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            item.quantity,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      );
-    });
-  }
-}
-
-// ── Animated chip ─────────────────────────────────────────────────────────────
-
-class _AnimatedChip extends StatelessWidget {
-  final AnimationController controller;
-  final double delay;
-  final Widget child;
-
-  const _AnimatedChip({
-    required this.controller,
-    required this.delay,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final start = delay.clamp(0.0, 0.9);
-    final end = (delay + 0.3).clamp(0.0, 1.0);
-    final anim = CurvedAnimation(
-      parent: controller,
-      curve: Interval(start, end, curve: Curves.easeOut),
-    );
-    return AnimatedBuilder(
-      animation: anim,
-      builder: (_, child) => Opacity(
-        opacity: anim.value,
-        child: Transform.translate(
-          offset: Offset(0, (1 - anim.value) * 14),
-          child: child,
-        ),
-      ),
-      child: child,
     );
   }
 }

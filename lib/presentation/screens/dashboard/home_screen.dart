@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/analytics_service.dart';
@@ -91,6 +92,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     setState(() => _isGenerating = true);
     _startProgressTimer();
+    // Keep CPU/screen alive so Android doesn't kill the socket mid-request.
+    WakelockPlus.enable();
 
     try {
       await ref.read(mealPlanningProvider.notifier).generateMealPlan(preferenceDto);
@@ -134,6 +137,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         }
       }
+    } finally {
+      WakelockPlus.disable();
     }
   }
 
@@ -146,51 +151,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.camera_alt_rounded,
-                  size: 18, color: AppColors.primary),
+              Icon(Icons.kitchen_rounded, size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Available Ingredients (Scanned)',
-                  style: AppTextStyles.bodyLarge
-                      .copyWith(color: AppColors.primary),
+                  'Scanned Ingredients',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               GestureDetector(
                 onTap: () =>
                     ref.read(scannedIngredientsProvider.notifier).clear(),
-                child: Icon(Icons.close,
-                    size: 18, color: AppColors.textSecondary),
+                child: Icon(Icons.close, size: 18, color: AppColors.textPrimary),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'These will be prioritised in your next meal plan.',
+            style: AppTextStyles.bodySmall,
           ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 6,
-            children: ingredients
-                .map(
-                  (ing) => Chip(
-                    label: Text(
-                      ing.quantity.isNotEmpty
-                          ? '${ing.name} · ${ing.quantity}'
-                          : ing.name,
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textPrimary)),
-                    backgroundColor: AppColors.primary.withOpacity(0.12),
-                    side: BorderSide(
-                        color: AppColors.primary.withOpacity(0.4)),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'These ingredients will be considered in your next meal plan.',
-            style:
-                AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+            children: List.generate(ingredients.length, (i) {
+              final ing = ingredients[i];
+              return Chip(
+                label: Text(
+                  ing.quantity.isNotEmpty
+                      ? '${ing.name} · ${ing.quantity}'
+                      : ing.name,
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.textPrimary)),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                deleteIcon: Icon(Icons.close,
+                    size: 14, color: AppColors.textPrimary),
+                onDeleted: () {
+                  final updated = List<ScannedIngredient>.from(ingredients)
+                    ..removeAt(i);
+                  ref
+                      .read(scannedIngredientsProvider.notifier)
+                      .setIngredients(updated);
+                },
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            }),
           ),
         ],
       ),
@@ -208,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 36),
 
               // Scanned ingredients banner (visible only after a scan)
               if (scannedIngredients.isNotEmpty)
@@ -305,7 +316,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
+
+                    _GlowFridgeButton(
+                      onPressed: _isGenerating
+                          ? null
+                          : () => context.push('/dashboard/fridge_scan'),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     GlassButton(
                       text: 'Generate Meal Plan 🪄',
@@ -317,6 +336,126 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated glow fridge button ───────────────────────────────────────────────
+
+class _GlowFridgeButton extends StatefulWidget {
+  final VoidCallback? onPressed;
+
+  const _GlowFridgeButton({required this.onPressed});
+
+  @override
+  State<_GlowFridgeButton> createState() => _GlowFridgeButtonState();
+}
+
+class _GlowFridgeButtonState extends State<_GlowFridgeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _glow;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _glow = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = widget.onPressed == null;
+    return AnimatedBuilder(
+      animation: _glow,
+      builder: (context, child) {
+        final blur = disabled ? 0.0 : 14.0 + 22.0 * _glow.value;
+        final alpha = disabled ? 0.0 : 0.3 + 0.4 * _glow.value;
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: alpha),
+                blurRadius: blur,
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: AppColors.primaryLight.withValues(alpha: alpha * 0.5),
+                blurRadius: blur * 1.6,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: widget.onPressed,
+          borderRadius: BorderRadius.circular(20),
+          splashColor: AppColors.primary.withValues(alpha: 0.12),
+          highlightColor: AppColors.primary.withValues(alpha: 0.06),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.glass,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: disabled
+                    ? AppColors.glassBorder
+                    : AppColors.primary.withValues(alpha: 0.5),
+                width: 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.kitchen_rounded,
+                      size: 22, color: AppColors.primary),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Show your Fridge',
+                        style: AppTextStyles.labelLarge
+                            .copyWith(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Let AI plan meals from what you have',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.textSecondary),
+              ],
+            ),
           ),
         ),
       ),

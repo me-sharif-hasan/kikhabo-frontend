@@ -34,4 +34,6 @@ class ApiConstants {
   // Ingredient Detection
   static const String ingredientsDetect = '$apiVersion/ingredients/detect';
 
+  // FCM Notifications
+  static const String fcmToken = '$apiVersion/user/fcm-token';
 }

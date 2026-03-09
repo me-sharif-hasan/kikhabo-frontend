@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -5,6 +6,7 @@ import '../../data/datasources/dio_client.dart';
 import '../../data/datasources/auth_datasource.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/notification_service.dart';
 
 // Dependency Injection
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
@@ -56,11 +58,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._repository, this._storage) : super(const AuthState());
 
+  /// Verifies auth by calling the server with the stored token.
+  /// - No token locally → not authenticated
+  /// - Server returns 4xx → token expired/invalid → not authenticated (clears stored token)
+  /// - Server returns 2xx → authenticated
+  /// - Network error → falls back to trusting the local token (offline support)
   Future<void> checkAuthStatus() async {
     final token = await _storage.read(key: AppConstants.tokenKey);
-    if (token != null) {
-      // Ideally verify token or fetch user here
-      // For now, assuming token presence = authenticated
+    debugPrint('[Auth] checkAuthStatus: local token=${token != null ? "found" : "null"}');
+
+    if (token == null) {
+      debugPrint('[Auth] checkAuthStatus: no token → not authenticated');
+      return;
+    }
+
+    try {
+      final valid = await _repository.verifyAuth();
+      if (valid) {
+        debugPrint('[Auth] checkAuthStatus: server verified ✓');
+        state = state.copyWith(isAuthenticated: true);
+      } else {
+        // 4xx — token rejected by server, clear it
+        debugPrint('[Auth] checkAuthStatus: server rejected token → clearing');
+        await _storage.delete(key: AppConstants.tokenKey);
+      }
+    } catch (e) {
+      // Network error — trust the local token so the app works offline
+      debugPrint('[Auth] checkAuthStatus: network error ($e) → trusting local token');
       state = state.copyWith(isAuthenticated: true);
     }
   }
@@ -71,8 +95,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await _repository.login(email, password);
       await _storage.write(key: AppConstants.tokenKey, value: response.token);
       state = state.copyWith(isLoading: false, isAuthenticated: true);
+      _registerFcmToken();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> _registerFcmToken() async {
+    final token = await NotificationService.instance.getToken();
+    if (token != null) {
+      await _repository.registerFcmToken(token);
     }
   }
 
@@ -88,6 +120,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    final token = await NotificationService.instance.getToken();
+    if (token != null) {
+      await _repository.deleteFcmToken(token);
+    }
     await _storage.delete(key: AppConstants.tokenKey);
     state = const AuthState(isAuthenticated: false);
   }

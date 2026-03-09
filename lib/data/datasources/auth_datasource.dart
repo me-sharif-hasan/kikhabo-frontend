@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../models/user.dart';
 import '../../core/constants/api_constants.dart';
@@ -26,13 +27,44 @@ class AuthDataSource {
   }
 
   /// Registers a new user.
-  /// 
+  ///
   /// Throws [DioException] on failure.
   Future<void> register(UserDto userDto) async {
     try {
       await _dio.post(
         ApiConstants.register,
         data: userDto.toJson(),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dio.post(
+        ApiConstants.fcmToken,
+        data: {
+          'fcmToken': token,
+          'platform': Platform.isIOS ? 'ios' : 'android',
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Verifies the stored token is still valid by hitting an authenticated endpoint.
+  /// Throws [DioException] on 4xx/5xx.
+  Future<void> verifyAuth() async {
+    await _dio.get(ApiConstants.currentUser);
+  }
+
+  Future<void> deleteFcmToken(String token) async {
+    try {
+      await _dio.delete(
+        ApiConstants.fcmToken,
+        data: {'fcmToken': token},
       );
     } catch (e) {
       rethrow;

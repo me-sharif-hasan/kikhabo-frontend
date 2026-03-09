@@ -1,8 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/notification_navigation_handler.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -29,14 +32,16 @@ void main() {
   runApp(const ProviderScope(child: KikhaboApp()));
 }
 
-class KikhaboApp extends StatefulWidget {
+final notificationNavigationHandler = NotificationNavigationHandler();
+
+class KikhaboApp extends ConsumerStatefulWidget {
   const KikhaboApp({super.key});
 
   @override
-  State<KikhaboApp> createState() => _KikhaboAppState();
+  ConsumerState<KikhaboApp> createState() => _KikhaboAppState();
 }
 
-class _KikhaboAppState extends State<KikhaboApp> {
+class _KikhaboAppState extends ConsumerState<KikhaboApp> {
   bool _firebaseReady = false;
 
   @override
@@ -45,7 +50,29 @@ class _KikhaboAppState extends State<KikhaboApp> {
     // Initialize Firebase in the background. runApp() above has already
     // rendered the first frame (dark scaffold below), satisfying Android's
     // pre-draw listener immediately.
-    Firebase.initializeApp().then((_) {
+    Firebase.initializeApp().then((_) async {
+      await NotificationService.instance.initialize(
+        navigationHandler: notificationNavigationHandler,
+      );
+      // Listen for FCM token refreshes and re-register with backend.
+      // The auth provider handles the first registration on login.
+      NotificationService.instance.onTokenRefresh.listen((_) {
+        // Token refresh is handled by auth_provider on next login.
+        // If user is currently logged in, the new token will be sent here.
+      });
+
+      // Check auth status before showing router, so redirect has correct state
+      await ref.read(authProvider.notifier).checkAuthStatus();
+
+      // Retrieve the terminated-state notification BEFORE showing the router.
+      // This guarantees pendingNotificationData is set before the splash screen
+      // calls handlePendingIfAny(), eliminating the race condition.
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint('[FCM] getInitialMessage: ${initialMessage.data}');
+        notificationNavigationHandler.pendingNotificationData = initialMessage.data;
+      }
+
       if (mounted) setState(() => _firebaseReady = true);
     });
   }
@@ -55,11 +82,13 @@ class _KikhaboAppState extends State<KikhaboApp> {
     if (!_firebaseReady) {
       // Dark placeholder drawn on the very first frame — stops the
       // cancelAndRedraw loop without blocking on Firebase.
+      debugPrint('Firebase not ready, showing empty page!');
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(backgroundColor: Color(0xFF111827)),
       );
     }
+    debugPrint('Firebase ready, escalating to the go router');
     return const _KikhaboRouter();
   }
 }
@@ -98,6 +127,7 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
             state.matchedLocation == '/onboarding';
 
         // If logged out and on a protected page, send to login.
+        debugPrint('User is unauthenticated. Showing login page!');
         if (!isAuthenticated && !isOnLoginOrRegister) {
           return '/';
         }
@@ -171,7 +201,12 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
     );
 
     // Notify GoRouter whenever auth state changes so the redirect runs again.
-    ref.listenManual<AuthState>(authProvider, (_, __) => _authBridge.notify());
+    ref.listenManual<AuthState>(authProvider, (prev, next) => _authBridge.notify());
+
+    // Attach router to notification handler so taps can navigate.
+    // The initial notification message was already resolved and stored as
+    // pendingNotificationData in _KikhaboAppState before the router was built.
+    notificationNavigationHandler.attachRouter(_router);
   }
 
   @override
@@ -186,7 +221,8 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
     AppColors.current = AppColors.paletteFor(themeType);
     return MaterialApp.router(
       title: AppConstants.appName,
-      theme: AppTheme.forType(themeType),
+      theme: AppTheme.forType
+        (themeType),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );

@@ -41,4 +41,38 @@ class AuthRepository {
       throw Exception(_mapError(e));
     }
   }
+
+  /// Returns true if the stored token is valid (server returns 2xx).
+  /// Returns false on any 4xx response (expired/invalid token).
+  /// Throws on network errors so the caller can distinguish the two cases.
+  Future<bool> verifyAuth() async {
+    try {
+      await _dataSource.verifyAuth();
+      return true;
+    } catch (e) {
+      if (e is DioException) {
+        final status = e.response?.statusCode;
+        if (status != null && status >= 400 && status < 500) {
+          return false; // 4xx → not authenticated
+        }
+      }
+      rethrow; // network error — let splash decide
+    }
+  }
+
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dataSource.registerFcmToken(token);
+    } catch (_) {
+      // Non-critical — silently ignore failures
+    }
+  }
+
+  Future<void> deleteFcmToken(String token) async {
+    try {
+      await _dataSource.deleteFcmToken(token);
+    } catch (_) {
+      // Non-critical — silently ignore failures
+    }
+  }
 }

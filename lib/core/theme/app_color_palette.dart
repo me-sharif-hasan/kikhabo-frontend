@@ -4,9 +4,13 @@ class AppColorPalette {
   final Color primary;
   final Color primaryLight;
   final Color primaryDark;
+  /// Text/icon color for use on solid [primary] or [primaryDark] surfaces.
+  final Color onPrimary;
   final Color accent;
   final Color accentLight;
   final Color accentDark;
+  /// Text/icon color for use on solid [accent] or [accentDark] surfaces.
+  final Color onAccent;
   final Color glass;
   final Color glassBorder;
   final Color glassText;
@@ -22,9 +26,11 @@ class AppColorPalette {
     required this.primary,
     required this.primaryLight,
     required this.primaryDark,
+    required this.onPrimary,
     required this.accent,
     required this.accentLight,
     required this.accentDark,
+    required this.onAccent,
     required this.glass,
     required this.glassBorder,
     required this.glassText,

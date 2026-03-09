@@ -30,9 +30,11 @@ class AppColors {
     primary: const Color(0xFF047857),
     primaryLight: const Color(0xFF10B981),
     primaryDark: const Color(0xFF065F46),
+    onPrimary: const Color(0xFFFFFFFF),
     accent: const Color(0xFFF97316),
     accentLight: const Color(0xFFFB923C),
     accentDark: const Color(0xFFEA580C),
+    onAccent: const Color(0xFFFFFFFF),
     glass: const Color(0xFFFFFFFF).withOpacity(0.1),
     glassBorder: const Color(0xFFFFFFFF).withOpacity(0.2),
     glassText: const Color(0xFFFFFFFF).withOpacity(0.9),
@@ -61,9 +63,11 @@ class AppColors {
     primary: const Color(0xFFFF1744),       // vivid rose-red — bright, not dark
     primaryLight: const Color(0xFFFF0035),  // hot pink-red
     primaryDark: const Color(0xFFCC0033),   // deep red
+    onPrimary: const Color(0xFFFFFFFF),     // white on deep red
     accent: const Color(0xFFFFD600),        // electric yellow — almost neon
     accentLight: const Color(0xFFFFEA40),   // bright lemon
     accentDark: const Color(0xFFFFC200),    // deep golden yellow
+    onAccent: const Color(0xFF1A0008),      // near-black on bright yellow
     glass: const Color(0xFFFF1744).withOpacity(0.06),
     glassBorder: const Color(0xFFFF1744).withOpacity(0.15),
     glassText: const Color(0xFF1A0008),     // near-black warm tint
@@ -91,9 +95,11 @@ class AppColors {
     primary: const Color(0xFF6366F1),
     primaryLight: const Color(0xFF818CF8),
     primaryDark: const Color(0xFF4F46E5),
+    onPrimary: const Color(0xFFFFFFFF),
     accent: const Color(0xFFEC4899),
     accentLight: const Color(0xFFF472B6),
     accentDark: const Color(0xFFDB2777),
+    onAccent: const Color(0xFFFFFFFF),
     glass: const Color(0xFFFFFFFF).withOpacity(0.08),
     glassBorder: const Color(0xFFFFFFFF).withOpacity(0.15),
     glassText: const Color(0xFFFFFFFF).withOpacity(0.92),
@@ -122,9 +128,11 @@ class AppColors {
     primary: const Color(0xFF00C9B1),       // electric teal-cyan
     primaryLight: const Color(0xFF2DEDD8),  // bright aqua
     primaryDark: const Color(0xFF009E8A),   // deep teal
+    onPrimary: const Color(0xFF0A1219),     // near-black on bright teal
     accent: const Color(0xFFFFAA5B),        // warm rose-gold / amber
     accentLight: const Color(0xFFFFCA8A),   // soft gold
     accentDark: const Color(0xFFE8862A),    // burnt amber
+    onAccent: const Color(0xFF0A1219),      // near-black on bright amber
     glass: const Color(0xFF00C9B1).withOpacity(0.10),
     glassBorder: const Color(0xFF00C9B1).withOpacity(0.22),
     glassText: const Color(0xFFE8F8F6),
@@ -152,9 +160,11 @@ class AppColors {
   static Color get primary => _current.primary;
   static Color get primaryLight => _current.primaryLight;
   static Color get primaryDark => _current.primaryDark;
+  static Color get onPrimary => _current.onPrimary;
   static Color get accent => _current.accent;
   static Color get accentLight => _current.accentLight;
   static Color get accentDark => _current.accentDark;
+  static Color get onAccent => _current.onAccent;
   static Color get glass => _current.glass;
   static Color get glassBorder => _current.glassBorder;
   static Color get glassText => _current.glassText;

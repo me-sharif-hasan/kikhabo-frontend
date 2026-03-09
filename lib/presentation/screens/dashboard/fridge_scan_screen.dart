@@ -365,13 +365,14 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: selected
-                              ? AppColors.primary.withValues(alpha: 0.15)
-                              : AppColors.glass,
+                              ? AppColors.primaryDark
+                              : AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: selected
-                                ? AppColors.primary
+                                ? AppColors.primaryLight
                                 : AppColors.glassBorder,
+                            width: selected ? 2 : 1,
                           ),
                         ),
                         child: Row(
@@ -382,7 +383,7 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
                                   : Icons.radio_button_unchecked_rounded,
                               size: 20,
                               color: selected
-                                  ? AppColors.primary
+                                  ? AppColors.onPrimary
                                   : AppColors.textSecondary,
                             ),
                             const SizedBox(width: 10),
@@ -393,7 +394,9 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
                                   Text(
                                     item.name,
                                     style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.textPrimary,
+                                      color: selected
+                                          ? AppColors.onPrimary
+                                          : AppColors.textPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -401,14 +404,20 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
                                     Text(
                                       item.quantity,
                                       style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.textSecondary),
+                                        color: selected
+                                            ? AppColors.primaryLight
+                                            : AppColors.textSecondary,
+                                      ),
                                     ),
                                 ],
                               ),
                             ),
                             IconButton(
                               icon: Icon(Icons.delete_outline_rounded,
-                                  size: 18, color: AppColors.textSecondary),
+                                  size: 18,
+                                  color: selected
+                                      ? AppColors.onPrimary
+                                      : AppColors.textSecondary),
                               onPressed: () => _deleteItem(i),
                               tooltip: 'Remove',
                               padding: EdgeInsets.zero,

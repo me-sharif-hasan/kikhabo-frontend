@@ -41,13 +41,15 @@ class CustomSlider extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: AppColors.primaryDark,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
               ),
               child: Text(
                 labelBuilder != null ? labelBuilder!(value) : value.toStringAsFixed(1),
-                style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryLight),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.onPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],

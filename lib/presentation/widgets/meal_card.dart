@@ -144,12 +144,15 @@ class _MealCardState extends ConsumerState<MealCard> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.2),
+                                color: AppColors.primaryDark,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '${widget.meal.totalEnergy} kcal',
-                                style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryLight),
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             if (_currentStatus != null)
@@ -157,15 +160,17 @@ class _MealCardState extends ConsumerState<MealCard> {
                                 margin: const EdgeInsets.only(top: 4),
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor().withOpacity(0.2),
+                                  color: _getStatusColor(),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: _getStatusColor(), width: 1),
                                 ),
                                 child: Text(
                                   _currentStatus!,
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: _getStatusColor(),
+                                    color: _currentStatus == 'SKIPPED'
+                                        ? AppColors.onAccent
+                                        : AppColors.onPrimary,
                                     fontSize: 10,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
@@ -221,26 +226,20 @@ class _MealCardState extends ConsumerState<MealCard> {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      gradient: _currentStatus == 'TAKEN'
-                          ? LinearGradient(
-                              colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: _currentStatus != 'TAKEN'
-                          ? AppColors.surface.withOpacity(0.3)
-                          : null,
+                      color: _currentStatus == 'TAKEN'
+                          ? AppColors.primary
+                          : AppColors.surface,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.primary,
+                        color: AppColors.primaryLight,
                         width: 2.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 3),
+                          color: AppColors.primaryDark,
+                          blurRadius: _currentStatus == 'TAKEN' ? 16 : 6,
+                          offset: const Offset(0, 4),
+                          spreadRadius: _currentStatus == 'TAKEN' ? 2 : 0,
                         ),
                       ],
                     ),
@@ -249,7 +248,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                           ? Icons.check_circle
                           : Icons.check_circle_outline,
                       color: _currentStatus == 'TAKEN'
-                          ? Colors.white
+                          ? AppColors.onPrimary
                           : AppColors.primaryLight,
                       size: 30,
                     ),

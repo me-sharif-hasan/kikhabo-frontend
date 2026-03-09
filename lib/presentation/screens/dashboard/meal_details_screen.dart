@@ -177,13 +177,13 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppColors.primaryDark,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '${_meal.totalEnergy} kcal',
                             style: AppTextStyles.labelMedium.copyWith(
-                              color: AppColors.primaryLight,
+                              color: AppColors.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -196,17 +196,15 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(_currentStatus).withOpacity(0.2),
+                            color: _getStatusColor(_currentStatus),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _getStatusColor(_currentStatus),
-                              width: 1,
-                            ),
                           ),
                           child: Text(
                             _currentStatus,
                             style: AppTextStyles.labelSmall.copyWith(
-                              color: _getStatusColor(_currentStatus),
+                              color: _currentStatus == 'SKIPPED'
+                                  ? AppColors.onAccent
+                                  : AppColors.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -225,37 +223,18 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Stats Grid
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
+              // Compact Stats Row
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  _buildStatCard(
-                    'Energy',
-                    '${_meal.totalEnergy} kcal',
-                    Icons.local_fire_department,
-                  ),
-                  _buildStatCard(
-                    'Rating',
-                    _currentRating > 0 ? '$_currentRating/5' : 'Not rated',
-                    Icons.star,
-                  ),
-                  _buildStatCard(
-                    'Status',
-                    _currentStatus,
-                    Icons.check_circle_outline,
-                  ),
-                  _buildStatCard(
-                    'Date',
-                    _getFormattedDate(),
-                    Icons.calendar_today,
-                  ),
+                  _buildInfoChip(Icons.local_fire_department, '${_meal.totalEnergy} kcal', AppColors.primaryDark, AppColors.onPrimary),
+                  _buildInfoChip(Icons.star, _currentRating > 0 ? '$_currentRating/5' : '—', AppColors.accentDark, AppColors.onAccent),
+                  _buildInfoChip(Icons.check_circle_outline, _currentStatus, _getStatusColor(_currentStatus),
+                      _currentStatus == 'SKIPPED' ? AppColors.onAccent : AppColors.onPrimary),
+                  _buildInfoChip(Icons.calendar_today, _getFormattedDate(), AppColors.primaryDark, AppColors.onPrimary),
                 ],
               ),
               const SizedBox(height: 16),
@@ -281,50 +260,68 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      const Divider(color: Colors.white10),
                       const SizedBox(height: 8),
-                      
+                      Divider(color: AppColors.glassBorder),
+                      const SizedBox(height: 4),
+
                       // Display detailed groceries (from meal planning)
                       if (hasGroceries)
-                        ..._meal.groceries!.map((grocery) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                        ..._meal.groceries!.map((grocery) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              Icon(Icons.circle, size: 6, color: AppColors.primaryLight),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   grocery.name,
-                                  style: AppTextStyles.bodyMedium,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${grocery.amountInGm}g',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryDark,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${grocery.amountInGm}g',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.onPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ))
-                      
+
                       // Display grocery names only (from meal history)
                       else if (hasGroceryNames)
-                        ..._meal.groceryNames!.map((name) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
+                        ..._meal.groceryNames!.map((name) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Row(
                             children: [
-                              Text(
-                                '• ',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.primaryLight,
-                                ),
-                              ),
+                              Icon(Icons.circle, size: 6, color: AppColors.primaryLight),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   name,
-                                  style: AppTextStyles.bodyMedium,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -427,7 +424,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                   child: Text(
                     'Save Changes',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                     ),
                   ),
                 ),
@@ -440,28 +437,24 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon) {
-    return GlassCard(
-      blur: 10,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildInfoChip(IconData icon, String value, Color bgColor, Color fgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.primaryLight, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
+          Icon(icon, size: 13, color: fgColor),
+          const SizedBox(width: 5),
           Text(
             value,
-            style: AppTextStyles.bodyMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: fgColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -481,14 +474,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [color, color.withOpacity(0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : AppColors.surface.withOpacity(0.3),
+          color: isSelected ? null : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : AppColors.glassBorder,
@@ -500,14 +486,18 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : color,
+              color: isSelected
+                  ? (status == 'SKIPPED' ? AppColors.onAccent : AppColors.onPrimary)
+                  : color,
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               status,
               style: AppTextStyles.labelMedium.copyWith(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected
+                    ? (status == 'SKIPPED' ? AppColors.onAccent : AppColors.onPrimary)
+                    : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

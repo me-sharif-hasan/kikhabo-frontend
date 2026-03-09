@@ -186,11 +186,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ? '${ing.name} · ${ing.quantity}'
                       : ing.name,
                   style: TextStyle(
-                      fontSize: 12, color: AppColors.textPrimary)),
-                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                deleteIcon: Icon(Icons.close,
-                    size: 14, color: AppColors.textPrimary),
+                    fontSize: 12,
+                    color: AppColors.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                backgroundColor: AppColors.primaryDark,
+                side: BorderSide.none,
+                deleteIcon: Icon(Icons.close, size: 14, color: AppColors.onPrimary),
                 onDeleted: () {
                   final updated = List<ScannedIngredient>.from(ingredients)
                     ..removeAt(i);

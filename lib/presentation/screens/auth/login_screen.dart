@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -10,6 +12,56 @@ import '../../../domain/providers/user_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_text_field.dart';
+
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _GoogleSignInButton({required this.onPressed, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.glassBorder),
+          backgroundColor: AppColors.glass,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryLight,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/google_logo.png',
+                    width: 22,
+                    height: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Continue with Google',
+                    style: AppTextStyles.labelLarge.copyWith(fontSize: 15),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,6 +87,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _onGoogleSignIn() async {
+    await ref.read(authProvider.notifier).signInWithGoogle();
+
+    final state = ref.read(authProvider);
+    if (state.isAuthenticated && mounted) {
+      // Fetch user data so we can check profile completeness
+      await ref.read(userProvider.notifier).loadCurrentUser();
+
+      if (!mounted) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyShown =
+          prefs.getBool(AppConstants.googleProfileCompletionShownKey) ?? false;
+
+      if (!alreadyShown) {
+        final user = ref.read(userProvider).user;
+        final hasIncompleteProfile = user == null ||
+            user.firstName == null ||
+            user.lastName == null ||
+            user.country == null ||
+            user.gender == null ||
+            user.religion == null ||
+            user.dateOfBirth == null ||
+            user.weightInKg == null ||
+            user.heightInFt == null;
+
+        if (hasIncompleteProfile && mounted) {
+          context.go('/profile-prompt');
+          return;
+        }
+      }
+
+      if (mounted) context.go('/dashboard/home');
+    } else if (state.error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.error!),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _onLogin() async {
@@ -201,11 +296,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                             Consumer(builder: (context, ref, _) {
                               final authState = ref.watch(authProvider);
-                              return GlassButton(
-                                text: 'Sign In',
-                                onPressed: _onLogin,
-                                isLoading: authState.isLoading,
-                                gradient: AppColors.bgGradient2,
+                              return Column(
+                                children: [
+                                  GlassButton(
+                                    text: 'Sign In',
+                                    onPressed: _onLogin,
+                                    isLoading: authState.isLoading,
+                                    gradient: AppColors.bgGradient2,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(child: Divider(color: AppColors.glassBorder)),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        child: Text(
+                                          'or continue with',
+                                          style: AppTextStyles.labelSmall,
+                                        ),
+                                      ),
+                                      Expanded(child: Divider(color: AppColors.glassBorder)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _GoogleSignInButton(
+                                    onPressed: authState.isLoading ? null : _onGoogleSignIn,
+                                    isLoading: authState.isLoading,
+                                  ),
+                                ],
                               );
                             }),
                           ],

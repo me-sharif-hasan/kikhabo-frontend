@@ -24,6 +24,8 @@ import 'presentation/screens/dashboard/meal_details_screen.dart';
 import 'presentation/screens/dashboard/profile_screen.dart';
 import 'presentation/screens/dashboard/edit_profile_screen.dart';
 import 'presentation/screens/onboarding_screen.dart';
+import 'presentation/screens/auth/profile_prompt_screen.dart';
+import 'presentation/screens/auth/google_profile_completion_screen.dart';
 import 'presentation/screens/dashboard/fridge_scan_screen.dart';
 import 'data/models/meal.dart';
 
@@ -124,7 +126,9 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         final isOnLoginOrRegister = state.matchedLocation == '/' ||
             state.matchedLocation == '/register' ||
             state.matchedLocation == '/splash' ||
-            state.matchedLocation == '/onboarding';
+            state.matchedLocation == '/onboarding' ||
+            state.matchedLocation == '/profile-prompt' ||
+            state.matchedLocation == '/google-profile-completion';
 
         // If logged out and on a protected page, send to login.
         debugPrint('User is unauthenticated. Showing login page!');
@@ -149,6 +153,14 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegistrationScreen(),
+        ),
+        GoRoute(
+          path: '/profile-prompt',
+          builder: (context, state) => const ProfilePromptScreen(),
+        ),
+        GoRoute(
+          path: '/google-profile-completion',
+          builder: (context, state) => const GoogleProfileCompletionScreen(),
         ),
         GoRoute(
           path: '/dashboard',

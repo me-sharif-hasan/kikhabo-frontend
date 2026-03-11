@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/models/user.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/datasources/dio_client.dart';
@@ -105,6 +107,48 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final token = await NotificationService.instance.getToken();
     if (token != null) {
       await _repository.registerFcmToken(token);
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      // 1. Sign out any cached Google session so the account picker always appears
+      final _googleSignIn = GoogleSignIn();
+      await _googleSignIn.signOut();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User cancelled — not an error
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // 2. Get auth details from Google
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // 3. Create a Firebase credential and sign in
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // 4. Get the Firebase ID token — this is what the backend needs
+      final String? firebaseIdToken =
+          await userCredential.user?.getIdToken();
+      if (firebaseIdToken == null) {
+        throw Exception('Failed to get Firebase ID token');
+      }
+
+      // 5. Exchange with our backend for a JWT
+      final response = await _repository.socialLogin(firebaseIdToken);
+      await _storage.write(key: AppConstants.tokenKey, value: response.token);
+      state = state.copyWith(isLoading: false, isAuthenticated: true);
+      _registerFcmToken();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 

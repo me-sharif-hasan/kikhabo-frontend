@@ -36,4 +36,7 @@ class ApiConstants {
 
   // FCM Notifications
   static const String fcmToken = '$apiVersion/user/fcm-token';
+
+  // Social Login
+  static const String socialLogin = '$apiVersion/user/social-login';
 }

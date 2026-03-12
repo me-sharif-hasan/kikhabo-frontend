@@ -60,6 +60,24 @@ class AuthDataSource {
     await _dio.get(ApiConstants.currentUser);
   }
 
+  /// Exchanges a Firebase ID token for a backend JWT via social login.
+  ///
+  /// Throws [DioException] on failure.
+  Future<LoginResponseDto> socialLogin(String firebaseIdToken) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.socialLogin,
+        data: {
+          'idToken': firebaseIdToken,
+          'provider': 'GOOGLE',
+        },
+      );
+      return LoginResponseDto.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> deleteFcmToken(String token) async {
     try {
       await _dio.delete(

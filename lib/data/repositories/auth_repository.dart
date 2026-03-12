@@ -60,6 +60,14 @@ class AuthRepository {
     }
   }
 
+  Future<LoginResponseDto> socialLogin(String firebaseIdToken) async {
+    try {
+      return await _dataSource.socialLogin(firebaseIdToken);
+    } catch (e) {
+      throw Exception(_mapError(e));
+    }
+  }
+
   Future<void> registerFcmToken(String token) async {
     try {
       await _dataSource.registerFcmToken(token);

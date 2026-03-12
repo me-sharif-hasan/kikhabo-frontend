@@ -8,6 +8,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../domain/providers/user_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_text_field.dart';
+import '../../widgets/height_scale_picker.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -24,7 +25,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _countryController;
   late TextEditingController _weightController;
-  late TextEditingController _heightController;
+  int _selectedHeightInches = 67; // default 5 ft 7 in
 
   String? _selectedGender;
   String? _selectedReligion;
@@ -43,7 +44,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _emailController = TextEditingController();
     _countryController = TextEditingController();
     _weightController = TextEditingController();
-    _heightController = TextEditingController();
   }
 
   @override
@@ -57,7 +57,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _emailController.text = user.email;
         _countryController.text = user.country ?? '';
         _weightController.text = user.weightInKg?.toString() ?? '';
-        _heightController.text = user.heightInFt?.toString() ?? '';
+        if (user.heightInFt != null && user.heightInFt! > 0) {
+          _selectedHeightInches = (user.heightInFt! * 12).round().clamp(12, 96);
+        }
         _selectedGender = _genders.contains(user.gender) ? user.gender : null;
         _selectedReligion = _religions.contains(user.religion) ? user.religion : null;
         if (user.dateOfBirth != null) {
@@ -78,7 +80,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _emailController.dispose();
     _countryController.dispose();
     _weightController.dispose();
-    _heightController.dispose();
     super.dispose();
   }
 
@@ -133,10 +134,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (weight != null) {
       data['weightInKg'] = weight;
     }
-    final height = double.tryParse(_heightController.text);
-    if (height != null) {
-      data['heightInFt'] = height;
-    }
+    data['heightInFt'] = _selectedHeightInches / 12.0;
 
     final success = await ref.read(userProvider.notifier).updateUser(data);
 
@@ -296,18 +294,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                GlassTextField(
-                  controller: _heightController,
-                  labelText: 'Height (ft)',
-                  hintText: 'e.g. 5.6',
-                  prefixIcon: Icons.height,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    if (v != null && v.isNotEmpty && double.tryParse(v) == null) {
-                      return 'Enter a valid number';
-                    }
-                    return null;
+                HeightScalePicker(
+                  initialHeightInFt: _selectedHeightInches / 12.0,
+                  onChanged: (ft) {
+                    setState(() => _selectedHeightInches = (ft * 12).round().clamp(12, 96));
                   },
                 ),
                 const SizedBox(height: 32),

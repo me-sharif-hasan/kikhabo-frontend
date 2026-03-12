@@ -10,6 +10,7 @@ import '../../../domain/providers/auth_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_text_field.dart';
+import '../../widgets/height_scale_picker.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
   const RegistrationScreen({super.key});
@@ -27,8 +28,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _weightController = TextEditingController();
-  final _heightController = TextEditingController();
   final _dobController = TextEditingController();
+  int _selectedHeightInches = 67; // default 5 ft 7 in
   
   // Dropdown values
   String _selectedGender = 'Male';
@@ -49,7 +50,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _weightController.dispose();
-    _heightController.dispose();
     _dobController.dispose();
     super.dispose();
   }
@@ -101,7 +101,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         religion: _selectedReligion,
         dateOfBirth: _dobController.text,
         weightInKg: double.parse(_weightController.text),
-        heightInFt: double.parse(_heightController.text),
+        heightInFt: _selectedHeightInches / 12.0,
       );
 
       await ref.read(authProvider.notifier).register(userDto);
@@ -240,24 +240,19 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      Row(
-                        children: [
-                          Expanded(child: GlassTextField(
-                            controller: _weightController,
-                            hintText: 'kg',
-                            labelText: 'Weight (kg)',
-                            keyboardType: TextInputType.number,
-                            validator: (v) => Validators.validateNumber(v, 'Weight'),
-                          )),
-                          const SizedBox(width: 16),
-                          Expanded(child: GlassTextField(
-                            controller: _heightController,
-                            hintText: 'ft',
-                            labelText: 'Height (ft)',
-                            keyboardType: TextInputType.number,
-                            validator: (v) => Validators.validateNumber(v, 'Height'),
-                          )),
-                        ],
+                      GlassTextField(
+                        controller: _weightController,
+                        hintText: 'kg',
+                        labelText: 'Weight (kg)',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => Validators.validateNumber(v, 'Weight'),
+                      ),
+                      const SizedBox(height: 16),
+                      HeightScalePicker(
+                        initialHeightInFt: _selectedHeightInches / 12.0,
+                        onChanged: (ft) {
+                          setState(() => _selectedHeightInches = (ft * 12).round().clamp(12, 96));
+                        },
                       ),
                       const SizedBox(height: 32),
                       

@@ -7,6 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/models/user.dart';
 import '../../../domain/providers/auth_provider.dart';
+import '../../widgets/country_picker_field.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_text_field.dart';
@@ -21,7 +22,7 @@ class RegistrationScreen extends ConsumerStatefulWidget {
 
 class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -30,16 +31,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _weightController = TextEditingController();
   final _dobController = TextEditingController();
   int _selectedHeightInches = 67; // default 5 ft 7 in
-  
+
   // Dropdown values
   String _selectedGender = 'Male';
-  String _selectedCountry = 'Bangladesh';
+  String? _selectedCountry;
   String _selectedReligion = 'Islam';
 
   // Available Options
-  final List<String> _genders = ['Male', 'Female', 'Other'];
-  final List<String> _countries = ['Bangladesh', 'India', 'USA', 'UK', 'Canada'];
-  final List<String> _religions = ['Islam', 'Hinduism', 'Christianity', 'Buddhism', 'Other'];
+  static const _genders = ['Male', 'Female', 'Other'];
+  static const _religions = ['Islam', 'Hinduism', 'Christianity', 'Buddhism', 'Other'];
 
   DateTime? _selectedDate;
 
@@ -90,6 +90,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         );
         return;
       }
+      if (_selectedCountry == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a country')),
+        );
+        return;
+      }
 
       final userDto = UserDto(
         firstName: _firstNameController.text.trim(),
@@ -97,7 +103,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         gender: _selectedGender,
-        country: _selectedCountry,
+        country: _selectedCountry!,
         religion: _selectedReligion,
         dateOfBirth: _dobController.text,
         weightInKg: double.parse(_weightController.text),
@@ -105,7 +111,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       );
 
       await ref.read(authProvider.notifier).register(userDto);
-      
+
       final state = ref.read(authProvider);
       if (state.error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,42 +121,50 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration Successful! Please Login.')),
         );
-        context.pop(); // Go back to Login
+        context.pop();
       }
     }
   }
 
-  Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.labelLarge),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.glass.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppColors.glassBorder.withOpacity(0.3)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: AppColors.surface,
-              style: AppTextStyles.bodyLarge,
-              icon: Icon(Icons.arrow_drop_down, color: AppColors.primaryLight),
-              onChanged: onChanged,
-              items: items.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ),
+  Widget _buildDropdown(
+    String label,
+    String value,
+    List<String> items,
+    Function(String?) onChanged, {
+    IconData? icon,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(15),
+      borderSide: BorderSide(color: AppColors.glassBorder.withOpacity(0.3)),
+    );
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle:
+            AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        prefixIcon: icon != null
+            ? Icon(icon, color: AppColors.primaryLight)
+            : null,
+        filled: true,
+        fillColor: AppColors.glass.withOpacity(0.05),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: AppColors.primaryLight),
         ),
-      ],
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      dropdownColor: AppColors.surface,
+      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
+          color: AppColors.textSecondary),
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
+      onChanged: onChanged,
     );
   }
 
@@ -173,26 +187,30 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     children: [
                       Text('Create Account', style: AppTextStyles.headlineMedium),
                       const SizedBox(height: 24),
-                      
+
                       Row(
                         children: [
-                          Expanded(child: GlassTextField(
+                          Expanded(
+                              child: GlassTextField(
                             controller: _firstNameController,
                             hintText: 'First Name',
                             labelText: 'First Name',
-                            validator: (v) => Validators.validateRequired(v, 'First Name'),
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'First Name'),
                           )),
                           const SizedBox(width: 16),
-                          Expanded(child: GlassTextField(
+                          Expanded(
+                              child: GlassTextField(
                             controller: _lastNameController,
                             hintText: 'Last Name',
                             labelText: 'Last Name',
-                            validator: (v) => Validators.validateRequired(v, 'Last Name'),
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'Last Name'),
                           )),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       GlassTextField(
                         controller: _emailController,
                         hintText: 'someone@example.com',
@@ -201,7 +219,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         validator: Validators.validateEmail,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       GlassTextField(
                         controller: _passwordController,
                         hintText: '********',
@@ -210,36 +228,54 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         validator: Validators.validatePassword,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       Row(
                         children: [
-                          Expanded(child: _buildDropdown('Gender', _selectedGender, _genders, (v) => setState(() => _selectedGender = v!))),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildDropdown('Country', _selectedCountry, _countries, (v) => setState(() => _selectedCountry = v!))),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      Row(
-                        children: [
-                          Expanded(child: _buildDropdown('Religion', _selectedReligion, _religions, (v) => setState(() => _selectedReligion = v!))),
-                          const SizedBox(width: 16),
-                          Expanded(child: GestureDetector(
-                            onTap: () => _selectDate(context),
-                            child: AbsorbPointer(
-                              child: GlassTextField(
-                                controller: _dobController,
-                                hintText: 'YYYY-MM-DD',
-                                labelText: 'Date of Birth',
-                                suffixIcon: Icon(Icons.calendar_today, color: AppColors.primaryLight),
-                                validator: (v) => Validators.validateRequired(v, 'DOB'),
-                              ),
+                          Expanded(
+                            child: _buildDropdown(
+                              'Gender',
+                              _selectedGender,
+                              _genders,
+                              (v) => setState(() => _selectedGender = v!),
+                              icon: Icons.wc,
                             ),
-                          )),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown(
+                              'Religion',
+                              _selectedReligion,
+                              _religions,
+                              (v) => setState(() => _selectedReligion = v!),
+                              icon: Icons.wb_sunny_outlined,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
+                      CountryPickerField(
+                        selectedCountry: _selectedCountry,
+                        onChanged: (v) => setState(() => _selectedCountry = v),
+                      ),
+                      const SizedBox(height: 16),
+
+                      GestureDetector(
+                        onTap: () => _selectDate(context),
+                        child: AbsorbPointer(
+                          child: GlassTextField(
+                            controller: _dobController,
+                            hintText: 'YYYY-MM-DD',
+                            labelText: 'Date of Birth',
+                            suffixIcon: Icon(Icons.calendar_today,
+                                color: AppColors.primaryLight),
+                            validator: (v) =>
+                                Validators.validateRequired(v, 'DOB'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       GlassTextField(
                         controller: _weightController,
                         hintText: 'kg',
@@ -248,14 +284,16 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         validator: (v) => Validators.validateNumber(v, 'Weight'),
                       ),
                       const SizedBox(height: 16),
+
                       HeightScalePicker(
                         initialHeightInFt: _selectedHeightInches / 12.0,
                         onChanged: (ft) {
-                          setState(() => _selectedHeightInches = (ft * 12).round().clamp(12, 96));
+                          setState(() => _selectedHeightInches =
+                              (ft * 12).round().clamp(12, 96));
                         },
                       ),
                       const SizedBox(height: 32),
-                      
+
                       Consumer(builder: (context, ref, _) {
                         final authState = ref.watch(authProvider);
                         return GlassButton(
@@ -265,13 +303,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           gradient: AppColors.bgGradient2,
                         );
                       }),
-                      
+
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => context.pop(),
                         child: Text(
                           'Already have an account? Login',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.accentLight),
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.accentLight),
                         ),
                       ),
                     ],

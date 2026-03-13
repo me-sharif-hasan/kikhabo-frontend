@@ -7,8 +7,10 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../domain/providers/user_provider.dart';
+import '../../widgets/country_picker_field.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_text_field.dart';
+import '../../widgets/height_scale_picker.dart';
 
 class GoogleProfileCompletionScreen extends ConsumerStatefulWidget {
   const GoogleProfileCompletionScreen({super.key});
@@ -24,12 +26,12 @@ class _GoogleProfileCompletionScreenState
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
-  late final TextEditingController _countryController;
   late final TextEditingController _weightController;
-  late final TextEditingController _heightController;
 
   String? _selectedGender;
   String? _selectedReligion;
+  String? _selectedCountry;
+  int _selectedHeightInches = 67; // default 5 ft 7 in
   DateTime? _selectedDateOfBirth;
   bool _initialized = false;
 
@@ -48,9 +50,7 @@ class _GoogleProfileCompletionScreenState
     super.initState();
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
-    _countryController = TextEditingController();
     _weightController = TextEditingController();
-    _heightController = TextEditingController();
   }
 
   @override
@@ -61,9 +61,12 @@ class _GoogleProfileCompletionScreenState
       if (user != null) {
         _firstNameController.text = user.firstName ?? '';
         _lastNameController.text = user.lastName ?? '';
-        _countryController.text = user.country ?? '';
+        _selectedCountry = user.country?.isNotEmpty == true ? user.country : null;
         _weightController.text = user.weightInKg?.toString() ?? '';
-        _heightController.text = user.heightInFt?.toString() ?? '';
+        if (user.heightInFt != null && user.heightInFt! > 0) {
+          _selectedHeightInches =
+              (user.heightInFt! * 12).round().clamp(12, 96);
+        }
         _selectedGender =
             _genders.contains(user.gender) ? user.gender : null;
         _selectedReligion =
@@ -74,7 +77,6 @@ class _GoogleProfileCompletionScreenState
                 DateFormat('d MMM, yyyy').parse(user.dateOfBirth!);
           } catch (_) {}
         }
-        // Only lock once we actually had user data to fill
         _initialized = true;
       }
     }
@@ -84,9 +86,7 @@ class _GoogleProfileCompletionScreenState
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _countryController.dispose();
     _weightController.dispose();
-    _heightController.dispose();
     super.dispose();
   }
 
@@ -107,9 +107,7 @@ class _GoogleProfileCompletionScreenState
     if (_lastNameController.text.isNotEmpty) {
       data['lastName'] = _lastNameController.text.trim();
     }
-    if (_countryController.text.isNotEmpty) {
-      data['country'] = _countryController.text.trim();
-    }
+    if (_selectedCountry != null) data['country'] = _selectedCountry;
     if (_selectedGender != null) data['gender'] = _selectedGender;
     if (_selectedReligion != null) data['religion'] = _selectedReligion;
     if (_selectedDateOfBirth != null) {
@@ -118,8 +116,7 @@ class _GoogleProfileCompletionScreenState
     }
     final weight = double.tryParse(_weightController.text);
     if (weight != null) data['weightInKg'] = weight;
-    final height = double.tryParse(_heightController.text);
-    if (height != null) data['heightInFt'] = height;
+    data['heightInFt'] = _selectedHeightInches / 12.0;
 
     final success = await ref.read(userProvider.notifier).updateUser(data);
 
@@ -227,14 +224,6 @@ class _GoogleProfileCompletionScreenState
                         ),
                         const SizedBox(height: 16),
 
-                        GlassTextField(
-                          controller: _countryController,
-                          labelText: 'Country',
-                          hintText: 'e.g. Bangladesh',
-                          prefixIcon: Icons.flag_outlined,
-                        ),
-                        const SizedBox(height: 16),
-
                         _buildDropdown(
                           label: 'Gender',
                           value: _selectedGender,
@@ -252,6 +241,13 @@ class _GoogleProfileCompletionScreenState
                           icon: Icons.wb_sunny_outlined,
                           onChanged: (v) =>
                               setState(() => _selectedReligion = v),
+                        ),
+                        const SizedBox(height: 16),
+
+                        CountryPickerField(
+                          selectedCountry: _selectedCountry,
+                          onChanged: (v) =>
+                              setState(() => _selectedCountry = v),
                         ),
                         const SizedBox(height: 16),
 
@@ -317,20 +313,11 @@ class _GoogleProfileCompletionScreenState
                         ),
                         const SizedBox(height: 16),
 
-                        GlassTextField(
-                          controller: _heightController,
-                          labelText: 'Height (ft)',
-                          hintText: 'e.g. 5.6',
-                          prefixIcon: Icons.height,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          validator: (v) {
-                            if (v != null &&
-                                v.isNotEmpty &&
-                                double.tryParse(v) == null) {
-                              return 'Enter a valid number';
-                            }
-                            return null;
+                        HeightScalePicker(
+                          initialHeightInFt: _selectedHeightInches / 12.0,
+                          onChanged: (ft) {
+                            setState(() => _selectedHeightInches =
+                                (ft * 12).round().clamp(12, 96));
                           },
                         ),
                         const SizedBox(height: 32),

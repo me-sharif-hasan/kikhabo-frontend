@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/glass_styles.dart';
 import '../../data/models/meal.dart';
 import '../../domain/providers/meal_provider.dart';
 
@@ -90,29 +89,14 @@ class _MealCardState extends ConsumerState<MealCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.glass.withOpacity(0.1),
-            AppColors.glass.withOpacity(0.05),
-          ],
-        ),
+        color: AppColors.glass,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: GlassStyles.blurFilter,
-          child: Stack(
+        child: Stack(
             children: [
               Material(
                 color: Colors.transparent,
@@ -258,7 +242,6 @@ class _MealCardState extends ConsumerState<MealCard> {
             ],
           ),
         ),
-      ),
     );
   }
 }

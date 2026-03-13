@@ -81,7 +81,8 @@ class _HeightScalePickerState extends State<HeightScalePicker> {
   Widget build(BuildContext context) {
     final ft = _selectedInches ~/ 12;
     final inRem = _selectedInches % 12;
-    final label = inRem == 0 ? '$ft ft' : '$ft ft $inRem in';
+    final cm = (_selectedInches * 2.54).round();
+    final ftLabel = inRem == 0 ? '$ft ft' : '$ft ft $inRem in';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,9 +105,22 @@ class _HeightScalePickerState extends State<HeightScalePicker> {
                   Icon(Icons.height, color: AppColors.primaryLight, size: 20),
                   const SizedBox(width: 6),
                   Text(
-                    label,
+                    ftLabel,
                     style: AppTextStyles.titleLarge
                         .copyWith(color: AppColors.primaryLight),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 1,
+                    height: 18,
+                    color: AppColors.glassBorder.withOpacity(0.5),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '$cm cm',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -277,6 +291,7 @@ class _ScaleButton extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Ruler painter — draws tick marks and ft labels
+// TextPainters are cached across repaints to avoid re-layout on every scroll.
 // ─────────────────────────────────────────────────────────────────────────────
 class _RulerPainter extends CustomPainter {
   final int totalTicks;
@@ -285,18 +300,48 @@ class _RulerPainter extends CustomPainter {
   final int activeInches;
   final double rulerHeight;
 
-  const _RulerPainter({
+  // Cached painters: key = inches value (only ft marks: 12,24,...,96)
+  final Map<int, TextPainter> _ftPainters;
+
+  _RulerPainter({
     required this.totalTicks,
     required this.minInches,
     required this.tickSpacing,
     required this.activeInches,
     required this.rulerHeight,
-  });
+  }) : _ftPainters = _buildFtPainters(minInches, totalTicks, activeInches);
+
+  static Map<int, TextPainter> _buildFtPainters(
+      int minInches, int totalTicks, int activeInches) {
+    final map = <int, TextPainter>{};
+    for (int i = 0; i < totalTicks; i++) {
+      final inches = i + minInches;
+      if (inches % 12 == 0) {
+        final ft = inches ~/ 12;
+        final isActive = inches == activeInches;
+        final tp = TextPainter(
+          text: TextSpan(
+            text: '$ft ft',
+            style: TextStyle(
+              color: isActive
+                  ? AppColors.accent
+                  : AppColors.primaryLight.withValues(alpha: 0.8),
+              fontSize: isActive ? 11 : 10,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        map[inches] = tp;
+      }
+    }
+    return map;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final defaultPaint = Paint()
-      ..color = AppColors.glassBorder.withOpacity(0.8)
+      ..color = AppColors.glassBorder.withValues(alpha: 0.8)
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
 
@@ -306,7 +351,7 @@ class _RulerPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final ftPaint = Paint()
-      ..color = AppColors.primaryLight.withOpacity(0.8)
+      ..color = AppColors.primaryLight.withValues(alpha: 0.8)
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
 
@@ -336,20 +381,8 @@ class _RulerPainter extends CustomPainter {
         paint,
       );
 
-      // ft label above tall tick
       if (isFt) {
-        final ft = inches ~/ 12;
-        final tp = TextPainter(
-          text: TextSpan(
-            text: '$ft ft',
-            style: TextStyle(
-              color: isActive ? AppColors.accent : AppColors.primaryLight.withOpacity(0.8),
-              fontSize: isActive ? 11 : 10,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
+        final tp = _ftPainters[inches]!;
         tp.paint(
           canvas,
           Offset(x - tp.width / 2, size.height - tickH - tp.height - 2),

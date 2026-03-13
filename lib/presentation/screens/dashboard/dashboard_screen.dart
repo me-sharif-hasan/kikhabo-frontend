@@ -89,7 +89,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.asset('assets/sidebar_bg.gif', fit: BoxFit.cover),
-                  Container(color: Colors.black.withOpacity(0.35)),
+                  Container(color: Colors.black.withValues(alpha: 0.35)),
                   Positioned(
                     top: 48,
                     right: 16,

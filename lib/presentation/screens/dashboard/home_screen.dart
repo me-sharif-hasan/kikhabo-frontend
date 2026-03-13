@@ -329,11 +329,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     const SizedBox(height: 16),
 
-                    GlassButton(
-                      text: 'Generate Meal Plan 🪄',
-                      onPressed: _isGenerating ? null : _generateMealPlan,
-                      gradient: AppColors.bgGradient1,
-                      progress: _isGenerating ? _progress : null,
+                    _GenerateButton(
+                      isGenerating: _isGenerating,
+                      progress: _progress,
+                      onPressed: _generateMealPlan,
                     ),
                   ],
                 ),
@@ -346,119 +345,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ── Animated glow fridge button ───────────────────────────────────────────────
+// ── Generate button — isolated so the progress timer only rebuilds this widget ─
 
-class _GlowFridgeButton extends StatefulWidget {
+class _GenerateButton extends StatefulWidget {
+  final bool isGenerating;
+  final double progress;
+  final VoidCallback onPressed;
+
+  const _GenerateButton({
+    required this.isGenerating,
+    required this.progress,
+    required this.onPressed,
+  });
+
+  @override
+  State<_GenerateButton> createState() => _GenerateButtonState();
+}
+
+class _GenerateButtonState extends State<_GenerateButton> {
+  @override
+  Widget build(BuildContext context) {
+    return GlassButton(
+      text: 'Generate Meal Plan 🪄',
+      onPressed: widget.isGenerating ? null : widget.onPressed,
+      gradient: AppColors.bgGradient1,
+      progress: widget.isGenerating ? widget.progress : null,
+    );
+  }
+}
+
+// ── Fridge button (static — no continuous animation) ─────────────────────────
+
+class _GlowFridgeButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const _GlowFridgeButton({required this.onPressed});
 
   @override
-  State<_GlowFridgeButton> createState() => _GlowFridgeButtonState();
-}
-
-class _GlowFridgeButtonState extends State<_GlowFridgeButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _glow;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _glow = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final disabled = widget.onPressed == null;
-    return AnimatedBuilder(
-      animation: _glow,
-      builder: (context, child) {
-        final blur = disabled ? 0.0 : 14.0 + 22.0 * _glow.value;
-        final alpha = disabled ? 0.0 : 0.3 + 0.4 * _glow.value;
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: alpha),
-                blurRadius: blur,
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: AppColors.primaryLight.withValues(alpha: alpha * 0.5),
-                blurRadius: blur * 1.6,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: child,
-        );
-      },
-      child: Material(
-        color: Colors.transparent,
+    final disabled = onPressed == null;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onPressed,
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: widget.onPressed,
-          borderRadius: BorderRadius.circular(20),
-          splashColor: AppColors.primary.withValues(alpha: 0.12),
-          highlightColor: AppColors.primary.withValues(alpha: 0.06),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.glass,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: disabled
-                    ? AppColors.glassBorder
-                    : AppColors.primary.withValues(alpha: 0.5),
-                width: 1.2,
+        splashColor: AppColors.primary.withValues(alpha: 0.12),
+        highlightColor: AppColors.primary.withValues(alpha: 0.06),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.glass,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: disabled
+                  ? AppColors.glassBorder
+                  : AppColors.primary.withValues(alpha: 0.5),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.kitchen_rounded,
+                    size: 22, color: AppColors.primary),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.kitchen_rounded,
-                      size: 22, color: AppColors.primary),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Show your Fridge',
+                      style: AppTextStyles.labelLarge
+                          .copyWith(color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Let AI plan meals from what you have',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Show your Fridge',
-                        style: AppTextStyles.labelLarge
-                            .copyWith(color: AppColors.textPrimary),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Let AI plan meals from what you have',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: AppColors.textSecondary),
-              ],
-            ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: AppColors.textSecondary),
+            ],
           ),
         ),
       ),

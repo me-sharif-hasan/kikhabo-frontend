@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../domain/providers/user_provider.dart';
+import '../../widgets/country_picker_field.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_text_field.dart';
 import '../../widgets/height_scale_picker.dart';
@@ -23,12 +24,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _emailController;
-  late TextEditingController _countryController;
   late TextEditingController _weightController;
   int _selectedHeightInches = 67; // default 5 ft 7 in
 
   String? _selectedGender;
   String? _selectedReligion;
+  String? _selectedCountry;
   DateTime? _selectedDateOfBirth;
 
   bool _initialized = false;
@@ -42,7 +43,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
     _emailController = TextEditingController();
-    _countryController = TextEditingController();
     _weightController = TextEditingController();
   }
 
@@ -55,7 +55,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _firstNameController.text = user.firstName ?? '';
         _lastNameController.text = user.lastName ?? '';
         _emailController.text = user.email;
-        _countryController.text = user.country ?? '';
+        _selectedCountry = user.country?.isNotEmpty == true ? user.country : null;
         _weightController.text = user.weightInKg?.toString() ?? '';
         if (user.heightInFt != null && user.heightInFt! > 0) {
           _selectedHeightInches = (user.heightInFt! * 12).round().clamp(12, 96);
@@ -78,7 +78,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
-    _countryController.dispose();
     _weightController.dispose();
     super.dispose();
   }
@@ -118,8 +117,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (_emailController.text.isNotEmpty) {
       data['email'] = _emailController.text.trim();
     }
-    if (_countryController.text.isNotEmpty) {
-      data['country'] = _countryController.text.trim();
+    if (_selectedCountry != null) {
+      data['country'] = _selectedCountry;
     }
     if (_selectedGender != null) {
       data['gender'] = _selectedGender;
@@ -210,14 +209,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                GlassTextField(
-                  controller: _countryController,
-                  labelText: 'Country',
-                  hintText: 'e.g. Bangladesh',
-                  prefixIcon: Icons.flag_outlined,
-                ),
-                const SizedBox(height: 16),
-
                 _buildDropdown(
                   label: 'Gender',
                   value: _selectedGender,
@@ -233,6 +224,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   items: _religions,
                   icon: Icons.wb_sunny_outlined,
                   onChanged: (v) => setState(() => _selectedReligion = v),
+                ),
+                const SizedBox(height: 16),
+
+                CountryPickerField(
+                  selectedCountry: _selectedCountry,
+                  onChanged: (v) => setState(() => _selectedCountry = v),
                 ),
                 const SizedBox(height: 16),
 
@@ -297,7 +294,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 HeightScalePicker(
                   initialHeightInFt: _selectedHeightInches / 12.0,
                   onChanged: (ft) {
-                    setState(() => _selectedHeightInches = (ft * 12).round().clamp(12, 96));
+                    setState(() => _selectedHeightInches =
+                        (ft * 12).round().clamp(12, 96));
                   },
                 ),
                 const SizedBox(height: 32),

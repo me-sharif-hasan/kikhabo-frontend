@@ -118,6 +118,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       analyticsId: 'nav_meals',
                     ),
                     _buildDrawerItem(
+                      icon: Icons.menu_book_rounded,
+                      title: 'Recipes',
+                      onTap: () => context.go('/dashboard/recipes'),
+                      analyticsId: 'nav_recipes',
+                    ),
+                    _buildDrawerItem(
                       icon: Icons.people_rounded,
                       title: 'Family Members',
                       onTap: () => context.go('/dashboard/family'),

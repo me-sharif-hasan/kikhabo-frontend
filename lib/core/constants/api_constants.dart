@@ -1,7 +1,7 @@
 class ApiConstants {
   // static const String baseUrl = 'http://localhost:8080';
-  // static const String baseUrl = 'http://192.168.0.103:8080';
-  static const String baseUrl = 'https://kikhabo.iishanto.com';
+  static const String baseUrl = 'http://192.168.0.103:8080';
+  // static const String baseUrl = 'https://kikhabo.iishanto.com';
   static const String apiVersion = '/api/v1';
 
   // Auth & User
@@ -39,4 +39,8 @@ class ApiConstants {
 
   // Social Login
   static const String socialLogin = '$apiVersion/user/social-login';
+
+  // Recipes
+  static const String recipes = '$apiVersion/recipes';
+  static const String recipesRandom = '$apiVersion/recipes/random';
 }

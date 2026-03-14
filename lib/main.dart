@@ -27,7 +27,10 @@ import 'presentation/screens/onboarding_screen.dart';
 import 'presentation/screens/auth/profile_prompt_screen.dart';
 import 'presentation/screens/auth/google_profile_completion_screen.dart';
 import 'presentation/screens/dashboard/fridge_scan_screen.dart';
+import 'presentation/screens/dashboard/recipe_list_screen.dart';
+import 'presentation/screens/dashboard/recipe_detail_screen.dart';
 import 'data/models/meal.dart';
+import 'data/models/recipe.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -208,6 +211,20 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         GoRoute(
           path: '/dashboard/fridge_scan',
           builder: (context, state) => const FridgeScanScreen(),
+        ),
+        GoRoute(
+          path: '/dashboard/recipes',
+          builder: (context, state) {
+            final q = state.uri.queryParameters['q'];
+            return DashboardScreen(child: RecipeListScreen(initialQuery: q));
+          },
+        ),
+        GoRoute(
+          path: '/dashboard/recipe_detail',
+          builder: (context, state) {
+            final recipe = state.extra as RecipeItem;
+            return DashboardScreen(child: RecipeDetailScreen(recipe: recipe));
+          },
         ),
       ],
     );

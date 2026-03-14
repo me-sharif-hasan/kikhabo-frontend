@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +9,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/api_error_handler.dart';
+import '../../../data/datasources/recipe_datasource.dart';
 import '../../../data/models/meal.dart';
+import '../../../data/models/recipe.dart';
 import '../../../domain/providers/meal_provider.dart';
 import '../../../domain/providers/ingredient_scan_provider.dart';
+import '../../../domain/providers/recipe_provider.dart';
+import '../../../domain/providers/user_provider.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_slider.dart';
@@ -67,6 +72,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (complete && mounted) {
       setState(() => _progress = 1.0);
     }
+  }
+
+  void _openSearch() {
+    final dataSource = ref.read(recipeDataSourceProvider);
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close search',
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (ctx, a1, a2, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: a1, curve: Curves.easeOut),
+        child: child,
+      ),
+      pageBuilder: (ctx, a1, a2) => _SearchOverlay(
+        dataSource: dataSource,
+        parentContext: context,
+      ),
+    );
   }
 
   Future<void> _generateMealPlan() async {
@@ -215,6 +239,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     ref.watch(themeProvider);
     final scannedIngredients = ref.watch(scannedIngredientsProvider);
+    final randomAsync = ref.watch(randomRecipesProvider);
+    final user = ref.watch(userProvider).user;
     return PopScope(
       canPop: !_isGenerating,
       child: SafeArea(
@@ -222,31 +248,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const SizedBox(height: 36),
+              const SizedBox(height: 8),
+
+              // ── Hero banner (search + greeting + actions) ─────────────────
+              _HeroBanner(
+                userName: user?.firstName,
+                onSearchTap: _openSearch,
+                onBrowseTap: () => context.push('/dashboard/recipes'),
+              ),
+              const SizedBox(height: 16),
 
               // Scanned ingredients banner (visible only after a scan)
               if (scannedIngredients.isNotEmpty)
                 _buildScannedIngredientsBanner(scannedIngredients),
 
-              // Header Section
-              GlassCard(
-                blur: 10,
-                child: Column(
-                  children: [
-                    Text(
-                      'Plan Your Meals',
-                      style: AppTextStyles.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Customize your preferences to get AI-generated meal suggestions.',
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
 
               // Form Section
               GlassCard(
@@ -337,6 +353,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
+
+              // ── Discover Recipes section ─────────────────────────────────
+              const SizedBox(height: 28),
+              _RandomRecipesSection(randomAsync: randomAsync),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -442,4 +463,620 @@ class _GlowFridgeButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Hero banner (greeting + search + action pills) ────────────────────────────
+
+class _HeroBanner extends StatelessWidget {
+  final String? userName;
+  final VoidCallback onSearchTap;
+  final VoidCallback onBrowseTap;
+
+  const _HeroBanner({
+    required this.userName,
+    required this.onSearchTap,
+    required this.onBrowseTap,
+  });
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = userName != null && userName!.isNotEmpty ? userName! : 'there';
+    return GlassCard(
+      blur: 14,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Greeting
+          Text(
+            '${_greeting()}, $name! 👋',
+            style: AppTextStyles.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Plan your meals or explore dishes from around the world.',
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 16),
+
+          // Joined search + browse bar
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.background.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.glassBorder),
+            ),
+            child: Row(
+              children: [
+                // Search side
+                Expanded(
+                  child: GestureDetector(
+                    onTap: onSearchTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 13),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search_rounded,
+                              color: AppColors.primary, size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Search recipes...',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Vertical divider
+                Container(
+                  width: 1,
+                  height: 28,
+                  color: AppColors.glassBorder,
+                ),
+
+                // Browse button
+                GestureDetector(
+                  onTap: onBrowseTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 13),
+                    child: Row(
+                      children: [
+                        Icon(Icons.menu_book_rounded,
+                            color: AppColors.primary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Browse',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Random recipes section ────────────────────────────────────────────────────
+
+class _RandomRecipesSection extends StatelessWidget {
+  final AsyncValue<List<RecipeItem>> randomAsync;
+
+  const _RandomRecipesSection({required this.randomAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header row
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Discover Recipes', style: AppTextStyles.titleMedium),
+                  Text(
+                    'Hand-picked dishes to inspire you',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => context.push('/dashboard/recipes'),
+              child: Row(
+                children: [
+                  Text(
+                    'See all',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_rounded,
+                      size: 16, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Cards
+        SizedBox(
+          height: 210,
+          child: randomAsync.when(
+            loading: () => ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              itemBuilder: (_, __) => const _RandomRecipeCardSkeleton(),
+            ),
+            error: (_, __) => Center(
+              child: Text('Could not load recipes', style: AppTextStyles.bodySmall),
+            ),
+            data: (recipes) => ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: recipes.length,
+              itemBuilder: (_, i) => _RandomRecipeCard(recipe: recipes[i]),
+            ),
+          ),
+        ),
+
+        // Browse all button
+        const SizedBox(height: 14),
+        GestureDetector(
+          onTap: () => context.push('/dashboard/recipes'),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.glass,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.restaurant_menu_rounded,
+                    size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Browse All Recipes',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RandomRecipeCard extends StatelessWidget {
+  final RecipeItem recipe;
+
+  const _RandomRecipeCard({required this.recipe});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/dashboard/recipe_detail', extra: recipe),
+      child: Container(
+        width: 158,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: AppColors.glass,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              child: SizedBox(
+                height: 110,
+                width: double.infinity,
+                child: recipe.image != null && recipe.image!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: recipe.image!,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => _cardPlaceholder(),
+                        placeholder: (_, __) => _cardPlaceholder(loading: true),
+                      )
+                    : _cardPlaceholder(),
+              ),
+            ),
+
+            // Info
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (recipe.source != null)
+                      Text(
+                        recipe.source!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cardPlaceholder({bool loading = false}) => Container(
+        color: AppColors.surface,
+        child: Center(
+          child: loading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      color: AppColors.primary, strokeWidth: 2),
+                )
+              : Icon(Icons.restaurant_rounded,
+                  color: AppColors.primary.withValues(alpha: 0.3), size: 28),
+        ),
+      );
+}
+
+class _RandomRecipeCardSkeleton extends StatelessWidget {
+  const _RandomRecipeCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 158,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 110,
+            decoration: BoxDecoration(
+              color: AppColors.glassBorder,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 10, width: 120, color: AppColors.glassBorder,
+                    margin: const EdgeInsets.only(bottom: 6)),
+                Container(height: 10, width: 80, color: AppColors.glassBorder),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Search overlay popup ──────────────────────────────────────────────────────
+
+class _SearchOverlay extends StatefulWidget {
+  final RecipeDataSource dataSource;
+  final BuildContext parentContext;
+
+  const _SearchOverlay({required this.dataSource, required this.parentContext});
+
+  @override
+  State<_SearchOverlay> createState() => _SearchOverlayState();
+}
+
+class _SearchOverlayState extends State<_SearchOverlay> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  List<RecipeItem> _results = [];
+  bool _loading = false;
+  String _lastQuery = '';
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() {
+        _results = [];
+        _loading = false;
+      });
+      return;
+    }
+    setState(() => _loading = true);
+    _debounce = Timer(const Duration(milliseconds: 450), () => _search(value));
+  }
+
+  Future<void> _search(String query) async {
+    _lastQuery = query;
+    try {
+      final page = await widget.dataSource.getRecipes(search: query, size: 8);
+      if (mounted && _lastQuery == query) {
+        setState(() {
+          _results = page.recipes;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _onRecipeTap(RecipeItem recipe) {
+    Navigator.of(context).pop();
+    widget.parentContext.push('/dashboard/recipe_detail', extra: recipe);
+  }
+
+  void _seeAll() {
+    final q = _controller.text.trim();
+    Navigator.of(context).pop();
+    widget.parentContext.push('/dashboard/recipes?q=${Uri.encodeComponent(q)}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.background,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Search bar row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back_rounded,
+                        color: AppColors.textPrimary),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.glass,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onChanged: _onChanged,
+                        onSubmitted: (_) {
+                          if (_controller.text.trim().isNotEmpty) _seeAll();
+                        },
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          hintText: 'Search recipes...',
+                          hintStyle: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.textSecondary),
+                          prefixIcon: Icon(Icons.search_rounded,
+                              color: AppColors.primary, size: 20),
+                          suffixIcon: _controller.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear,
+                                      color: AppColors.textSecondary, size: 18),
+                                  onPressed: () {
+                                    _controller.clear();
+                                    _onChanged('');
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(color: AppColors.glassBorder, height: 20),
+
+            // Content area
+            Expanded(
+              child: _buildContent(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_controller.text.trim().isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_rounded,
+                size: 56, color: AppColors.primary.withValues(alpha: 0.25)),
+            const SizedBox(height: 14),
+            Text('Type to search recipes',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                )),
+          ],
+        ),
+      );
+    }
+
+    if (_loading) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+
+    if (_results.isEmpty) {
+      return Center(
+        child: Text('No results found', style: AppTextStyles.bodyMedium),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _results.length,
+            itemBuilder: (_, i) {
+              final r = _results[i];
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: r.image != null && r.image!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: r.image!,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => _tileImgFallback(),
+                            placeholder: (_, __) => _tileImgFallback(),
+                          )
+                        : _tileImgFallback(),
+                  ),
+                ),
+                title: Text(
+                  r.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelLarge
+                      .copyWith(color: AppColors.textPrimary, fontSize: 13),
+                ),
+                subtitle: r.source != null
+                    ? Text(r.source!,
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500))
+                    : null,
+                trailing: Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12, color: AppColors.textSecondary),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                onTap: () => _onRecipeTap(r),
+              );
+            },
+          ),
+        ),
+
+        // See all results
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: GestureDetector(
+            onTap: _seeAll,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'See all results for "${_controller.text}"',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_rounded,
+                      size: 16, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tileImgFallback() => Container(
+        color: AppColors.glass,
+        child: Icon(Icons.restaurant_rounded,
+            size: 20, color: AppColors.primary.withValues(alpha: 0.35)),
+      );
 }

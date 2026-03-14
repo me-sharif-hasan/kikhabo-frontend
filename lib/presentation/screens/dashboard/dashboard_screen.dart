@@ -117,12 +117,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       onTap: () => context.go('/dashboard/meals'),
                       analyticsId: 'nav_meals',
                     ),
-                    _buildDrawerItem(
-                      icon: Icons.menu_book_rounded,
-                      title: 'Recipes',
-                      onTap: () => context.go('/dashboard/recipes'),
-                      analyticsId: 'nav_recipes',
-                    ),
+                    _buildRecipesExpansion(context),
                     _buildDrawerItem(
                       icon: Icons.people_rounded,
                       title: 'Family Members',
@@ -208,6 +203,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         }
         onTap();
       },
+      hoverColor: AppColors.primary.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    );
+  }
+
+  Widget _buildRecipesExpansion(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        leading: Icon(Icons.menu_book_rounded, color: AppColors.textSecondary),
+        title: Text('Recipes', style: AppTextStyles.bodyMedium),
+        iconColor: AppColors.textSecondary,
+        collapsedIconColor: AppColors.textSecondary,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: EdgeInsets.zero,
+        children: [
+          _buildSubItem(
+            context,
+            icon: Icons.search_rounded,
+            title: 'Browse Recipes',
+            onTap: () {
+              _scaffoldKey.currentState?.closeDrawer();
+              AnalyticsService.instance.logDrawerNavigation('nav_recipes');
+              context.go('/dashboard/recipes');
+            },
+          ),
+          _buildSubItem(
+            context,
+            icon: Icons.bookmark_rounded,
+            title: 'Bookmarks',
+            onTap: () {
+              _scaffoldKey.currentState?.closeDrawer();
+              AnalyticsService.instance.logDrawerNavigation('nav_bookmarks');
+              context.go('/dashboard/bookmarks');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 48, right: 16),
+      leading: Icon(icon, color: AppColors.textSecondary, size: 18),
+      title: Text(title, style: AppTextStyles.bodyMedium),
+      onTap: onTap,
       hoverColor: AppColors.primary.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );

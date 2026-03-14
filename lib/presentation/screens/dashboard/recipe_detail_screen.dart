@@ -6,27 +6,50 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/recipe.dart';
 import '../../../domain/providers/recipe_provider.dart';
+import '../../../domain/providers/user_provider.dart';
+import '../../widgets/youtube_video_carousel.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
   final RecipeItem recipe;
 
   const RecipeDetailScreen({super.key, required this.recipe});
 
+  /// Builds the YouTube search term: "Recipe Name (UserCountry)" when the
+  /// logged-in user has a country set, otherwise falls back to "Recipe Name recipe".
+  List<String> _searchTerms(String? userCountry) {
+    final name = recipe.name;
+    if (userCountry != null && userCountry.trim().isNotEmpty) {
+      return ['$name (${userCountry.trim()})'];
+    }
+    return ['$name recipe'];
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(themeProvider);
     final detailAsync = ref.watch(recipeDetailProvider(recipe.id));
+    final userCountry = ref.watch(userProvider).user?.country;
+    final searchTerms = _searchTerms(userCountry);
 
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero image — sits behind the transparent AppBar
-            _HeroImage(imageUrl: recipe.image, name: recipe.name),
+            // Hero image with bookmark button overlay
+            Stack(
+              children: [
+                _HeroImage(imageUrl: recipe.image, name: recipe.name),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _BookmarkButton(recipeId: recipe.id),
+                ),
+              ],
+            ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -43,10 +66,28 @@ class RecipeDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 14),
                   _MetaRow(recipe: recipe),
 
-                  // Detail body
+                  // About — available immediately from the list response
+                  if (recipe.description != null &&
+                      recipe.description!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _SectionHeader(title: 'About'),
+                    const SizedBox(height: 10),
+                    _ContentCard(
+                      child: Text(
+                        recipe.description!,
+                        style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                      ),
+                    ),
+                  ],
+
+                  // YouTube carousel — shown immediately, no detail needed
+                  const SizedBox(height: 24),
+                  YouTubeVideoCarousel(searchTerms: searchTerms),
+
+                  // Ingredients & cooking guide — skeleton while loading
                   const SizedBox(height: 24),
                   detailAsync.when(
-                    loading: () => _LoadingSection(),
+                    loading: () => _RecipeDetailSkeleton(),
                     error: (e, _) => _ErrorSection(message: e.toString()),
                     data: (detail) => _DetailContent(detail: detail),
                   ),
@@ -105,17 +146,16 @@ class _HeroImage extends StatelessWidget {
     );
   }
 
-  Widget _heroFallback({bool loading = false}) => Container(
-        color: AppColors.surface,
-        child: Center(
-          child: loading
-              ? CircularProgressIndicator(color: AppColors.primary)
-              : Icon(
-                  Icons.restaurant_menu_rounded,
-                  size: 72,
-                  color: AppColors.primary.withValues(alpha: 0.25),
-                ),
-        ),
+  Widget _heroFallback({bool loading = false}) => Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/sidebar_bg.gif', fit: BoxFit.cover),
+          Center(
+            child: loading
+                ? CircularProgressIndicator(color: Colors.white70)
+                : Image.asset('assets/logo.png', width: 72, height: 72),
+          ),
+        ],
       );
 }
 
@@ -180,6 +220,8 @@ class _MetaChip extends StatelessWidget {
               ),
               Text(
                 value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textPrimary,
@@ -195,6 +237,75 @@ class _MetaChip extends StatelessWidget {
 }
 
 // ── Loading / error states ────────────────────────────────────────────────────
+
+class _RecipeDetailSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SkeletonBlock(height: 18, width: 110),
+        const SizedBox(height: 10),
+        _SkeletonCard(lineCount: 5),
+        const SizedBox(height: 24),
+        _SkeletonBlock(height: 18, width: 140),
+        const SizedBox(height: 10),
+        _SkeletonCard(lineCount: 8),
+      ],
+    );
+  }
+}
+
+class _SkeletonBlock extends StatelessWidget {
+  final double height;
+  final double width;
+  const _SkeletonBlock({required this.height, required this.width});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: AppColors.glassBorder.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(6),
+        ),
+      );
+}
+
+class _SkeletonCard extends StatelessWidget {
+  final int lineCount;
+  const _SkeletonCard({required this.lineCount});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.glass,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(lineCount, (i) {
+            final isShort = i == lineCount - 1;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                height: 12,
+                width: isShort
+                    ? MediaQuery.of(context).size.width * 0.45
+                    : double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.glassBorder.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            );
+          }),
+        ),
+      );
+}
 
 class _LoadingSection extends StatelessWidget {
   @override
@@ -242,19 +353,6 @@ class _DetailContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // About / description
-        if (detail.description != null && detail.description!.isNotEmpty) ...[
-          _SectionHeader(title: 'About'),
-          const SizedBox(height: 10),
-          _ContentCard(
-            child: Text(
-              detail.description!,
-              style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-
         // Ingredients
         if (detail.ingredients != null && detail.ingredients!.isNotEmpty) ...[
           _SectionHeader(title: 'Ingredients'),
@@ -466,6 +564,37 @@ class _CookingGuide extends StatelessWidget {
   }
 }
 
+// ── Bookmark button ───────────────────────────────────────────────────────────
+
+class _BookmarkButton extends ConsumerWidget {
+  final String recipeId;
+
+  const _BookmarkButton({required this.recipeId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isBookmarked = ref.watch(
+      bookmarkProvider.select((s) => s.isBookmarked(recipeId)),
+    );
+
+    return GestureDetector(
+      onTap: () => ref.read(bookmarkProvider.notifier).toggle(recipeId),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isBookmarked ? AppColors.primary : Colors.black.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
+      ),
+    );
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 String _formatDuration(String? iso) {
@@ -475,8 +604,10 @@ String _formatDuration(String? iso) {
   return [if (h != null) '${h}h', if (m != null) '${m}m'].join(' ');
 }
 
-String _cleanYield(String raw) =>
-    raw.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+String _cleanYield(String raw) {
+  final firstLine = raw.split('\n').first;
+  return firstLine.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+}
 
 String _capitalize(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

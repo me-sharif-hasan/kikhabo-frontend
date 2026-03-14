@@ -220,6 +220,11 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
           },
         ),
         GoRoute(
+          path: '/dashboard/bookmarks',
+          builder: (context, state) =>
+              const DashboardScreen(child: RecipeListScreen(bookmarksMode: true)),
+        ),
+        GoRoute(
           path: '/dashboard/recipe_detail',
           builder: (context, state) {
             final recipe = state.extra as RecipeItem;

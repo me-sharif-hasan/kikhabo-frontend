@@ -43,4 +43,7 @@ class ApiConstants {
   // Recipes
   static const String recipes = '$apiVersion/recipes';
   static const String recipesRandom = '$apiVersion/recipes/random';
+
+  // Bookmarks
+  static const String recipesBookmarks = '$apiVersion/recipes/bookmarks';
 }

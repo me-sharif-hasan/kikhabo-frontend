@@ -67,10 +67,16 @@ class RecipeListState {
   }
 }
 
-class RecipeListNotifier extends StateNotifier<RecipeListState> {
-  final RecipeRepository _repository;
+typedef _PageFetcher = Future<RecipePage> Function({
+  int page,
+  int size,
+  String? search,
+});
 
-  RecipeListNotifier(this._repository) : super(const RecipeListState()) {
+class RecipeListNotifier extends StateNotifier<RecipeListState> {
+  final _PageFetcher _fetcher;
+
+  RecipeListNotifier(this._fetcher) : super(const RecipeListState()) {
     _load(page: 0, replace: true);
   }
 
@@ -87,7 +93,7 @@ class RecipeListNotifier extends StateNotifier<RecipeListState> {
     }
 
     try {
-      final result = await _repository.getRecipes(
+      final result = await _fetcher(
         page: page,
         size: 20,
         search: query ?? state.query,
@@ -127,5 +133,87 @@ class RecipeListNotifier extends StateNotifier<RecipeListState> {
 
 final recipeListProvider =
     StateNotifierProvider<RecipeListNotifier, RecipeListState>((ref) {
-  return RecipeListNotifier(ref.watch(recipeRepositoryProvider));
+  final repo = ref.watch(recipeRepositoryProvider);
+  return RecipeListNotifier(repo.getRecipes);
+});
+
+final bookmarksListProvider =
+    StateNotifierProvider<RecipeListNotifier, RecipeListState>((ref) {
+  final repo = ref.watch(recipeRepositoryProvider);
+  return RecipeListNotifier(repo.getBookmarks);
+});
+
+// ── Bookmark state ────────────────────────────────────────────────────────────
+
+class BookmarkState {
+  final Set<String> ids;
+  final bool isLoading;
+
+  const BookmarkState({this.ids = const {}, this.isLoading = false});
+
+  bool isBookmarked(String id) => ids.contains(id);
+
+  BookmarkState copyWith({Set<String>? ids, bool? isLoading}) =>
+      BookmarkState(
+        ids: ids ?? this.ids,
+        isLoading: isLoading ?? this.isLoading,
+      );
+}
+
+class BookmarkNotifier extends StateNotifier<BookmarkState> {
+  final RecipeRepository _repository;
+  final Ref _ref;
+
+  BookmarkNotifier(this._repository, this._ref)
+      : super(const BookmarkState()) {
+    _loadAllIds();
+  }
+
+  Future<void> _loadAllIds() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final page = await _repository.getBookmarks(page: 0, size: 200);
+      state = BookmarkState(ids: page.recipes.map((r) => r.id).toSet());
+    } catch (_) {
+      state = const BookmarkState();
+    }
+  }
+
+  Future<void> toggle(String id) async {
+    final wasBookmarked = state.isBookmarked(id);
+    // Optimistic update
+    final newIds = Set<String>.from(state.ids);
+    if (wasBookmarked) {
+      newIds.remove(id);
+    } else {
+      newIds.add(id);
+    }
+    state = state.copyWith(ids: newIds);
+
+    try {
+      if (wasBookmarked) {
+        await _repository.removeBookmark(id);
+      } else {
+        await _repository.bookmarkRecipe(id);
+      }
+      // Refresh the bookmarks list so it's up to date
+      _ref.invalidate(bookmarksListProvider);
+    } catch (_) {
+      // Revert on failure
+      final revertIds = Set<String>.from(state.ids);
+      if (wasBookmarked) {
+        revertIds.add(id);
+      } else {
+        revertIds.remove(id);
+      }
+      state = state.copyWith(ids: revertIds);
+    }
+  }
+
+  Future<void> refresh() => _loadAllIds();
+}
+
+final bookmarkProvider =
+    StateNotifierProvider<BookmarkNotifier, BookmarkState>((ref) {
+  return BookmarkNotifier(ref.watch(recipeRepositoryProvider), ref);
 });

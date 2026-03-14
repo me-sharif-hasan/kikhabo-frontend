@@ -267,31 +267,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Form Section
               GlassCard(
                 blur: 20,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    CustomSlider(
-                      label: 'Spiciness',
-                      value: _spicyRating,
-                      min: 1,
-                      max: 10,
-                      divisions: 9,
-                      onChanged: _isGenerating ? null : (v) => setState(() => _spicyRating = v),
-                      labelBuilder: (v) => '${v.toInt()}/10',
+                    // Spiciness + Saltiness side by side
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomSlider(
+                            label: 'Spiciness',
+                            value: _spicyRating,
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            onChanged: _isGenerating ? null : (v) => setState(() => _spicyRating = v),
+                            labelBuilder: (v) => '${v.toInt()}/10',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: CustomSlider(
+                            label: 'Saltiness',
+                            value: _saltRating,
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            onChanged: _isGenerating ? null : (v) => setState(() => _saltRating = v),
+                            labelBuilder: (v) => '${v.toInt()}/10',
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-
-                    CustomSlider(
-                      label: 'Saltiness',
-                      value: _saltRating,
-                      min: 1,
-                      max: 10,
-                      divisions: 9,
-                      onChanged: _isGenerating ? null : (v) => setState(() => _saltRating = v),
-                      labelBuilder: (v) => '${v.toInt()}/10',
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
                     CustomSlider(
                       label: 'Price Range',
@@ -306,7 +314,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         return 'Premium';
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
                     Row(
                       children: [
@@ -321,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             labelBuilder: (v) => '${v.toInt()} Days',
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: CustomSlider(
                             label: 'Meals/Day',
@@ -335,7 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
 
                     _GlowFridgeButton(
                       onPressed: _isGenerating
@@ -343,7 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : () => context.push('/dashboard/fridge_scan'),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _GenerateButton(
                       isGenerating: _isGenerating,
@@ -414,7 +422,7 @@ class _GlowFridgeButton extends StatelessWidget {
         splashColor: AppColors.primary.withValues(alpha: 0.12),
         highlightColor: AppColors.primary.withValues(alpha: 0.06),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: AppColors.glass,
             borderRadius: BorderRadius.circular(20),
@@ -428,15 +436,15 @@ class _GlowFridgeButton extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(Icons.kitchen_rounded,
-                    size: 22, color: AppColors.primary),
+                    size: 18, color: AppColors.primary),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,35 +656,6 @@ class _RandomRecipesSection extends StatelessWidget {
             ),
           ),
         ),
-
-        // Browse all button
-        const SizedBox(height: 14),
-        GestureDetector(
-          onTap: () => context.push('/dashboard/recipes'),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.glass,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.restaurant_menu_rounded,
-                    size: 18, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Browse All Recipes',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -768,8 +747,7 @@ class _RandomRecipeCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                       color: AppColors.primary, strokeWidth: 2),
                 )
-              : Icon(Icons.restaurant_rounded,
-                  color: AppColors.primary.withValues(alpha: 0.3), size: 28),
+              : Image.asset('assets/sidebar_bg.gif'),
         ),
       );
 }

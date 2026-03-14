@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -142,13 +143,11 @@ class _VideoThumbnailCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              video.thumbnailUrl,
+            CachedNetworkImage(
+              imageUrl: video.thumbnailUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: Colors.black26,
-                child: const Icon(Icons.image_not_supported, color: Colors.white30, size: 48),
-              ),
+              placeholder: (_, __) => _thumbnailPlaceholder(),
+              errorWidget: (_, __, ___) => _thumbnailPlaceholder(),
             ),
             // Gradient overlay
             Container(
@@ -189,6 +188,16 @@ class _VideoThumbnailCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _thumbnailPlaceholder() => Container(
+        color: Colors.black45,
+        child: Center(
+          child: Opacity(
+            opacity: 0.5,
+            child: Image.asset('assets/logo.png', width: 48, height: 48),
+          ),
+        ),
+      );
 
   void _openPlayer(BuildContext context) {
     showModalBottomSheet(

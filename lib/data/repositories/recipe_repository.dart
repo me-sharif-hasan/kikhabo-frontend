@@ -14,4 +14,11 @@ class RecipeRepository {
 
   Future<List<RecipeItem>> getRandomRecipes({int limit = 5}) =>
       _dataSource.getRandomRecipes(limit: limit);
+
+  Future<void> bookmarkRecipe(String id) => _dataSource.bookmarkRecipe(id);
+
+  Future<void> removeBookmark(String id) => _dataSource.removeBookmark(id);
+
+  Future<RecipePage> getBookmarks({int page = 0, int size = 20, String? search}) =>
+      _dataSource.getBookmarks(page: page, size: size, search: search);
 }

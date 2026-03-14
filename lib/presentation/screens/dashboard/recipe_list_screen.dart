@@ -10,8 +10,9 @@ import '../../../domain/providers/recipe_provider.dart';
 
 class RecipeListScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
+  final bool bookmarksMode;
 
-  const RecipeListScreen({super.key, this.initialQuery});
+  const RecipeListScreen({super.key, this.initialQuery, this.bookmarksMode = false});
 
   @override
   ConsumerState<RecipeListScreen> createState() => _RecipeListScreenState();
@@ -22,13 +23,17 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
   late final ScrollController _scrollController;
   String? _pendingSearch;
 
+  bool get _isBookmarks => widget.bookmarksMode;
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
     _scrollController = ScrollController()..addListener(_onScroll);
 
-    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+    if (!_isBookmarks &&
+        widget.initialQuery != null &&
+        widget.initialQuery!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(recipeListProvider.notifier).search(widget.initialQuery!);
       });
@@ -45,7 +50,11 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 300) {
-      ref.read(recipeListProvider.notifier).loadMore();
+      if (_isBookmarks) {
+        ref.read(bookmarksListProvider.notifier).loadMore();
+      } else {
+        ref.read(recipeListProvider.notifier).loadMore();
+      }
     }
   }
 
@@ -53,7 +62,11 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
     _pendingSearch = value;
     Future.delayed(const Duration(milliseconds: 500), () {
       if (_pendingSearch == value && mounted) {
-        ref.read(recipeListProvider.notifier).search(value);
+        if (_isBookmarks) {
+          ref.read(bookmarksListProvider.notifier).search(value);
+        } else {
+          ref.read(recipeListProvider.notifier).search(value);
+        }
       }
     });
   }
@@ -61,7 +74,9 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
   @override
   Widget build(BuildContext context) {
     ref.watch(themeProvider);
-    final state = ref.watch(recipeListProvider);
+    final state = _isBookmarks
+        ? ref.watch(bookmarksListProvider)
+        : ref.watch(recipeListProvider);
 
     return SafeArea(
       child: Column(
@@ -75,15 +90,21 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Recipes', style: AppTextStyles.headlineMedium),
                 Text(
-                  'Discover dishes from around the world',
+                  _isBookmarks ? 'Bookmarks' : 'Recipes',
+                  style: AppTextStyles.headlineMedium,
+                ),
+                Text(
+                  _isBookmarks
+                      ? 'Your saved recipes'
+                      : 'Discover dishes from around the world',
                   style: AppTextStyles.bodySmall,
                 ),
                 const SizedBox(height: 14),
                 _SearchBar(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
+                  hint: _isBookmarks ? 'Search bookmarks...' : 'Search recipes...',
                   onClear: () {
                     _searchController.clear();
                     _onSearchChanged('');
@@ -98,7 +119,9 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
             child: RefreshIndicator(
               color: AppColors.primary,
               backgroundColor: AppColors.surface,
-              onRefresh: () => ref.read(recipeListProvider.notifier).refresh(),
+              onRefresh: () => _isBookmarks
+                  ? ref.read(bookmarksListProvider.notifier).refresh()
+                  : ref.read(recipeListProvider.notifier).refresh(),
               child: _buildContent(state),
             ),
           ),
@@ -109,9 +132,7 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
 
   Widget _buildContent(RecipeListState state) {
     if (state.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
+      return Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (state.error != null && state.items.isEmpty) {
@@ -123,14 +144,12 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
             children: [
               Icon(Icons.wifi_off_rounded, size: 52, color: AppColors.textSecondary),
               const SizedBox(height: 14),
-              Text(
-                state.error!,
-                style: AppTextStyles.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
+              Text(state.error!, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () => ref.read(recipeListProvider.notifier).refresh(),
+                onPressed: () => _isBookmarks
+                    ? ref.read(bookmarksListProvider.notifier).refresh()
+                    : ref.read(recipeListProvider.notifier).refresh(),
                 child: Text('Try again', style: TextStyle(color: AppColors.primary)),
               ),
             ],
@@ -141,13 +160,31 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
 
     if (state.items.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off_rounded, size: 52, color: AppColors.textSecondary),
-            const SizedBox(height: 12),
-            Text('No recipes found', style: AppTextStyles.bodyMedium),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _isBookmarks ? Icons.bookmark_border_rounded : Icons.search_off_rounded,
+                size: 52,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _isBookmarks ? 'No bookmarks yet' : 'No recipes found',
+                style: AppTextStyles.bodyMedium,
+              ),
+              if (_isBookmarks) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Tap the bookmark icon on any recipe to save it here',
+                  style: AppTextStyles.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
@@ -162,18 +199,14 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
               child: state.isLoadingMore
-                  ? CircularProgressIndicator(
-                      color: AppColors.primary, strokeWidth: 2)
+                  ? CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)
                   : const SizedBox.shrink(),
             ),
           );
         }
         return _RecipeCard(
           recipe: state.items[index],
-          onTap: () => context.push(
-            '/dashboard/recipe_detail',
-            extra: state.items[index],
-          ),
+          onTap: () => context.push('/dashboard/recipe_detail', extra: state.items[index]),
         );
       },
     );
@@ -186,11 +219,13 @@ class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
+  final String hint;
 
   const _SearchBar({
     required this.controller,
     required this.onChanged,
     required this.onClear,
+    this.hint = 'Search recipes...',
   });
 
   @override
@@ -206,7 +241,7 @@ class _SearchBar extends StatelessWidget {
         onChanged: onChanged,
         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
         decoration: InputDecoration(
-          hintText: 'Search recipes...',
+          hintText: hint,
           hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           prefixIcon: Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
           suffixIcon: controller.text.isNotEmpty
@@ -225,16 +260,19 @@ class _SearchBar extends StatelessWidget {
 
 // ── Recipe card ───────────────────────────────────────────────────────────────
 
-class _RecipeCard extends StatelessWidget {
+class _RecipeCard extends ConsumerWidget {
   final RecipeItem recipe;
   final VoidCallback onTap;
 
   const _RecipeCard({required this.recipe, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final prepTime = _formatDuration(recipe.prepTime);
     final cookTime = _formatDuration(recipe.cookTime);
+    final isBookmarked = ref.watch(
+      bookmarkProvider.select((s) => s.isBookmarked(recipe.id)),
+    );
 
     return GestureDetector(
       onTap: onTap,
@@ -312,12 +350,35 @@ class _RecipeCard extends StatelessWidget {
               ),
             ),
 
+            // Bookmark + arrow
             Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: AppColors.textSecondary,
+              padding: const EdgeInsets.only(right: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () =>
+                        ref.read(bookmarkProvider.notifier).toggle(recipe.id),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        isBookmarked
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        size: 20,
+                        color: isBookmarked
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ],
               ),
             ),
           ],
@@ -346,12 +407,16 @@ class _TimeBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: AppColors.primary),
           const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -392,11 +457,7 @@ class _RecipeImage extends StatelessWidget {
                 child: CircularProgressIndicator(
                   color: AppColors.primary, strokeWidth: 2),
               )
-            : Icon(
-                Icons.restaurant_rounded,
-                color: AppColors.primary.withValues(alpha: 0.35),
-                size: 28,
-              ),
+            : Image.asset('assets/logo_bg.png'),
       ),
     );
   }
@@ -411,5 +472,7 @@ String _formatDuration(String? iso) {
   return [if (h != null) '${h}h', if (m != null) '${m}m'].join(' ');
 }
 
-String _cleanYield(String raw) =>
-    raw.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+String _cleanYield(String raw) {
+  final firstLine = raw.split('\n').first;
+  return firstLine.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+}

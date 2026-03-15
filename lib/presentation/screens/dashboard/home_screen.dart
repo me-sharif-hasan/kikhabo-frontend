@@ -16,6 +16,7 @@ import '../../../domain/providers/meal_provider.dart';
 import '../../../domain/providers/ingredient_scan_provider.dart';
 import '../../../domain/providers/recipe_provider.dart';
 import '../../../domain/providers/user_provider.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/custom_slider.dart';
@@ -654,11 +655,20 @@ class _RandomRecipesSection extends StatelessWidget {
             error: (_, __) => Center(
               child: Text('Could not load recipes', style: AppTextStyles.bodySmall),
             ),
-            data: (recipes) => ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: recipes.length,
-              itemBuilder: (_, i) => _RandomRecipeCard(recipe: recipes[i]),
-            ),
+            data: (recipes) {
+              // Insert a banner ad card at position 2 (after first 2 recipe cards)
+              const adIndex = 2;
+              final totalCount = recipes.length + 1; // +1 for the ad slot
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: totalCount,
+                itemBuilder: (_, i) {
+                  if (i == adIndex) return const CarouselBannerAdWidget();
+                  final recipeIndex = i < adIndex ? i : i - 1;
+                  return _RandomRecipeCard(recipe: recipes[recipeIndex]);
+                },
+              );
+            },
           ),
         ),
       ],

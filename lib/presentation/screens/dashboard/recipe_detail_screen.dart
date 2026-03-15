@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/recipe.dart';
 import '../../../domain/providers/recipe_provider.dart';
 import '../../../domain/providers/user_provider.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/youtube_video_carousel.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
@@ -45,30 +45,33 @@ class RecipeDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero image with bookmark button overlay
-            Stack(
-              children: [
-                _HeroImage(imageUrl: recipe.image, name: recipe.name),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: _BookmarkButton(recipeId: recipe.id),
-                ),
-              ],
+            // ── Video player hero — replaces static image ─────────────────
+            YouTubeVideoCarousel(
+              searchTerms: searchTerms,
+              showHeader: false,
             ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name
-                  Text(
-                    recipe.name,
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      fontWeight: FontWeight.w800,
-                      height: 1.3,
-                    ),
+                  // Name + bookmark
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          recipe.name,
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            fontWeight: FontWeight.w800,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _BookmarkButton(recipeId: recipe.id),
+                    ],
                   ),
 
                   // Meta chips
@@ -89,12 +92,11 @@ class RecipeDetailScreen extends ConsumerWidget {
                     ),
                   ],
 
-                  // YouTube carousel — shown immediately, no detail needed
-                  const SizedBox(height: 24),
-                  YouTubeVideoCarousel(searchTerms: searchTerms),
+                  // Banner ad after About
+                  const BannerAdWidget(margin: EdgeInsets.only(top: 20, bottom: 4)),
 
                   // Ingredients & cooking guide — skeleton while loading
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   detailAsync.when(
                     loading: () => _RecipeDetailSkeleton(),
                     error: (e, _) => _ErrorSection(message: e.toString()),
@@ -109,64 +111,6 @@ class RecipeDetailScreen extends ConsumerWidget {
       ), // SafeArea
     ); // PopScope
   }
-}
-
-// ── Hero image ────────────────────────────────────────────────────────────────
-
-class _HeroImage extends StatelessWidget {
-  final String? imageUrl;
-  final String name;
-
-  const _HeroImage({required this.imageUrl, required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 280,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (imageUrl != null && imageUrl!.isNotEmpty)
-            CachedNetworkImage(
-              imageUrl: imageUrl!,
-              fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => _heroFallback(),
-              placeholder: (_, __) => _heroFallback(loading: true),
-            )
-          else
-            _heroFallback(),
-
-          // Bottom fade-out into background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  AppColors.background.withValues(alpha: 0.9),
-                ],
-                stops: const [0.45, 1.0],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _heroFallback({bool loading = false}) => Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/sidebar_bg.gif', fit: BoxFit.cover),
-          Center(
-            child: loading
-                ? CircularProgressIndicator(color: Colors.white70)
-                : Image.asset('assets/logo.png', width: 72, height: 72),
-          ),
-        ],
-      );
 }
 
 // ── Meta chips row ────────────────────────────────────────────────────────────
@@ -590,14 +534,15 @@ class _BookmarkButton extends ConsumerWidget {
     return GestureDetector(
       onTap: () => ref.read(bookmarkProvider.notifier).toggle(recipeId),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isBookmarked ? AppColors.accent : Colors.black.withValues(alpha: 0.45),
+          color: isBookmarked ? AppColors.accent : AppColors.glass,
           shape: BoxShape.circle,
+          border: Border.all(color: AppColors.glassBorder),
         ),
         child: Icon(
           isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-          color: Colors.white,
+          color: isBookmarked ? Colors.white : AppColors.textSecondary,
           size: 22,
         ),
       ),
@@ -616,7 +561,10 @@ String _formatDuration(String? iso) {
 
 String _cleanYield(String raw) {
   final firstLine = raw.split('\n').first;
-  return firstLine.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+  return firstLine
+      .replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*', caseSensitive: false), '')
+      .replaceAll(RegExp(r'^[\s:;,]+'), '') // strip leading : ; ,
+      .trim();
 }
 
 String _capitalize(String s) =>

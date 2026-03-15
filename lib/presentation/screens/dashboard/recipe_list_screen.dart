@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/recipe.dart';
@@ -189,12 +190,23 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
       );
     }
 
+    // Virtual item count: recipe items + one ad slot every 8 recipes + optional loader
+    int adSlots(int count) => count ~/ 8;
+    int recipeIndex(int virtualIndex) {
+      final ads = (virtualIndex + 1) ~/ 9;
+      return virtualIndex - ads;
+    }
+
+    final itemCount =
+        state.items.length + adSlots(state.items.length) + (state.hasMore ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: state.items.length + (state.hasMore ? 1 : 0),
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index >= state.items.length) {
+        // Bottom loading indicator
+        if (index == itemCount - 1 && state.hasMore) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
@@ -204,9 +216,15 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
             ),
           );
         }
+        // Banner ad every 9th slot (index 8, 17, 26…)
+        if ((index + 1) % 9 == 0) {
+          return const BannerAdWidget();
+        }
+        final ri = recipeIndex(index);
+        if (ri >= state.items.length) return const SizedBox.shrink();
         return _RecipeCard(
-          recipe: state.items[index],
-          onTap: () => context.push('/dashboard/recipe_detail', extra: state.items[index]),
+          recipe: state.items[ri],
+          onTap: () => context.push('/dashboard/recipe_detail', extra: state.items[ri]),
         );
       },
     );
@@ -477,5 +495,8 @@ String _formatDuration(String? iso) {
 
 String _cleanYield(String raw) {
   final firstLine = raw.split('\n').first;
-  return firstLine.replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*'), '').trim();
+  return firstLine
+      .replaceAll(RegExp(r'(Makes|Serves|makes|serves)\s*', caseSensitive: false), '')
+      .replaceAll(RegExp(r'^[\s:;,]+'), '') // strip leading : ; ,
+      .trim();
 }

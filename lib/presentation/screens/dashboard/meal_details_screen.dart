@@ -9,6 +9,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../data/models/meal.dart';
 import '../../../domain/providers/meal_provider.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/youtube_video_carousel.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
@@ -344,7 +345,8 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
               // YouTube Recipe Carousel
               if (_meal.youtubeSearchTerms != null && _meal.youtubeSearchTerms!.isNotEmpty) ...[
                 YouTubeVideoCarousel(searchTerms: _meal.youtubeSearchTerms!),
-                const SizedBox(height: 16),
+                const BannerAdWidget(margin: EdgeInsets.only(top: 12, bottom: 4)),
+                const SizedBox(height: 12),
               ],
 
               // Rating Section

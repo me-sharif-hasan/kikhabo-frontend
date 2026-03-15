@@ -8,6 +8,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/shopping_list_pdf_generator.dart';
 import '../../../data/models/meal.dart';
 import '../../../domain/providers/meal_provider.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/meal_card.dart';
 
@@ -66,6 +67,19 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
   bool _isSuggestedMode(BuildContext context) {
     final uri = GoRouterState.of(context).uri;
     return uri.queryParameters['view'] == 'suggested';
+  }
+
+  /// Converts a virtual list index (which includes ad slots) to a meal index.
+  /// Ad slots appear at positions 8, 17, 26… (every 9th item, 0-based).
+  int _mealIndex(int virtualIndex) {
+    final adsBefore = (virtualIndex + 1) ~/ 9;
+    return virtualIndex - adsBefore;
+  }
+
+  /// Total virtual item count including ad slots (+ optional loading row).
+  int _listItemCount(int mealCount, bool addLoadingRow) {
+    final adSlots = mealCount ~/ 8;
+    return mealCount + adSlots + (addLoadingRow && _isLoadingMore ? 1 : 0);
   }
 
   void _onScroll() {
@@ -381,43 +395,46 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
               : ListView.builder(
                   controller: isPaginated ? _scrollController : null,
                   padding: const EdgeInsets.all(16),
-                  itemCount: meals.length + (isPaginated && _isLoadingMore ? 1 : 0),
+                  // Every 9th slot (index 8, 17, 26…) is a banner ad
+                  itemCount: _listItemCount(meals.length, isPaginated),
                   itemBuilder: (context, index) {
-                    if (index == meals.length) {
-                      // Loading indicator at bottom
+                    // Bottom loading indicator
+                    if (isPaginated && index == _listItemCount(meals.length, true) - 1 && _isLoadingMore) {
                       return Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
+                          child: CircularProgressIndicator(color: AppColors.primary),
                         ),
                       );
                     }
+                    // Banner ad slot every 9th item (positions 8, 17, 26…)
+                    if ((index + 1) % 9 == 0) {
+                      return const BannerAdWidget();
+                    }
+                    final mealIndex = _mealIndex(index);
+                    if (mealIndex >= meals.length) return const SizedBox.shrink();
                     if (isPaginated) {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Checkbox(
-                            value: _selectedMealIndices.contains(index),
+                            value: _selectedMealIndices.contains(mealIndex),
                             activeColor: AppColors.primary,
                             onChanged: (checked) {
                               setState(() {
                                 if (checked == true) {
-                                  _selectedMealIndices.add(index);
+                                  _selectedMealIndices.add(mealIndex);
                                 } else {
-                                  _selectedMealIndices.remove(index);
+                                  _selectedMealIndices.remove(mealIndex);
                                 }
                               });
                             },
                           ),
-                          Expanded(child: MealCard(meal: meals[index])),
+                          Expanded(child: MealCard(meal: meals[mealIndex])),
                         ],
                       );
                     }
-                    return MealCard(
-                      meal: meals[index],
-                    );
+                    return MealCard(meal: meals[mealIndex]);
                   },
                 ),
         ),

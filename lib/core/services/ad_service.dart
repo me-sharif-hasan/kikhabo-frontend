@@ -10,8 +10,10 @@ class AdService {
   AdService._();
   static final AdService instance = AdService._();
 
-  static const String _adUnitId =
-      'ca-app-pub-8867603755047103/4910523503';
+  // Use Google's test interstitial in debug builds; real unit in release.
+  static const String _adUnitId = kDebugMode
+      ? 'ca-app-pub-3940256099942544/1033173712' // test interstitial
+      : 'ca-app-pub-8867603755047103/4910523503';
 
   static const Duration _minInterval = Duration(minutes: 3);
 

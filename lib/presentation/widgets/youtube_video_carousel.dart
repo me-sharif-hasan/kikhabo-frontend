@@ -1,12 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../core/services/analytics_service.dart';
 import '../../core/services/youtube_service.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../domain/providers/youtube_provider.dart';
 import 'glass_card.dart';
@@ -14,19 +12,28 @@ import 'glass_card.dart';
 class YouTubeVideoCarousel extends ConsumerWidget {
   final List<String> searchTerms;
 
-  const YouTubeVideoCarousel({super.key, required this.searchTerms});
+  /// When false, the "Watch Recipes" header and divider are hidden and the
+  /// GlassCard wrapper is removed — suitable for use as a full-bleed hero.
+  final bool showHeader;
+
+  const YouTubeVideoCarousel({
+    super.key,
+    required this.searchTerms,
+    this.showHeader = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Use first search term as primary query; fall back to joining all terms
     final query = searchTerms.first;
     final asyncVideos = ref.watch(youtubeSearchProvider(query));
 
-    return GlassCard(
-      blur: 10,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    // Height of the thumbnail area: larger when used as a hero
+    final thumbHeight = showHeader ? 180.0 : 260.0;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showHeader) ...[
           Row(
             children: [
               const Icon(Icons.play_circle_outline, color: Colors.redAccent, size: 24),
@@ -37,30 +44,43 @@ class YouTubeVideoCarousel extends ConsumerWidget {
           const SizedBox(height: 12),
           const Divider(color: Colors.white10),
           const SizedBox(height: 8),
-          asyncVideos.when(
-            loading: () => const SizedBox(
-              height: 180,
-              child: Center(
-                child: CircularProgressIndicator(color: Colors.redAccent, strokeWidth: 2),
-              ),
-            ),
-            error: (_, __) => _FallbackSearchLinks(searchTerms: searchTerms),
-            data: (videos) {
-              if (videos.isEmpty) return _FallbackSearchLinks(searchTerms: searchTerms);
-              return _VideoPageView(videos: videos, searchTerm: query);
-            },
-          ),
         ],
-      ),
+        asyncVideos.when(
+          loading: () => SizedBox(
+            height: thumbHeight,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.redAccent, strokeWidth: 2),
+            ),
+          ),
+          error: (_, __) => _FallbackSearchLinks(searchTerms: searchTerms),
+          data: (videos) {
+            if (videos.isEmpty) return _FallbackSearchLinks(searchTerms: searchTerms);
+            return _VideoPageView(
+              videos: videos,
+              searchTerm: query,
+              thumbHeight: thumbHeight,
+            );
+          },
+        ),
+      ],
     );
+
+    if (!showHeader) return content; // edge-to-edge, no card wrapper
+
+    return GlassCard(blur: 10, child: content);
   }
 }
 
 class _VideoPageView extends StatefulWidget {
   final List<YouTubeVideo> videos;
   final String searchTerm;
+  final double thumbHeight;
 
-  const _VideoPageView({required this.videos, required this.searchTerm});
+  const _VideoPageView({
+    required this.videos,
+    required this.searchTerm,
+    required this.thumbHeight,
+  });
 
   @override
   State<_VideoPageView> createState() => _VideoPageViewState();
@@ -69,35 +89,60 @@ class _VideoPageView extends StatefulWidget {
 class _VideoPageViewState extends State<_VideoPageView> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  YoutubePlayerController? _playerCtrl;
 
   @override
   void dispose() {
+    _playerCtrl?.pause();
+    _playerCtrl?.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _play(YouTubeVideo video) {
+    _playerCtrl?.pause();
+    _playerCtrl?.dispose();
+    AnalyticsService.instance.logYouTubeVideoPlayed(
+      videoId: video.videoId,
+      videoTitle: video.title,
+      searchTerm: widget.searchTerm,
+    );
+    setState(() {
+      _playerCtrl = YoutubePlayerController(
+        initialVideoId: video.videoId,
+        flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+      );
+    });
+  }
+
+  void _closePlayer() {
+    _playerCtrl?.pause();
+    _playerCtrl?.dispose();
+    setState(() => _playerCtrl = null);
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
-          height: 180,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: widget.videos.length,
-            onPageChanged: (page) => setState(() => _currentPage = page),
-            itemBuilder: (context, index) {
-              final video = widget.videos[index];
-              return Padding(
+        if (_playerCtrl != null)
+          _InlinePlayer(controller: _playerCtrl!, onClose: _closePlayer)
+        else
+          SizedBox(
+            height: widget.thumbHeight,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.videos.length,
+              onPageChanged: (p) => setState(() => _currentPage = p),
+              itemBuilder: (_, i) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: _VideoThumbnailCard(
-                  video: video,
-                  searchTerm: widget.searchTerm,
+                  video: widget.videos[i],
+                  onPlay: () => _play(widget.videos[i]),
                 ),
-              );
-            },
+              ),
+            ),
           ),
-        ),
         if (widget.videos.length > 1) ...[
           const SizedBox(height: 10),
           Row(
@@ -121,23 +166,83 @@ class _VideoPageViewState extends State<_VideoPageView> {
   }
 }
 
+/// Inline YouTube player that replaces the thumbnail in-place.
+/// StatefulWidget so we can listen to the controller and force
+/// play() once the WebView is ready — Android blocks autoPlay
+/// without an explicit programmatic play() call.
+class _InlinePlayer extends StatefulWidget {
+  final YoutubePlayerController controller;
+  final VoidCallback onClose;
+
+  const _InlinePlayer({required this.controller, required this.onClose});
+
+  @override
+  State<_InlinePlayer> createState() => _InlinePlayerState();
+}
+
+class _InlinePlayerState extends State<_InlinePlayer> {
+  bool _didPlay = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        YoutubePlayer(
+          controller: widget.controller,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: Colors.redAccent,
+          onReady: () {
+            // onReady is the most reliable hook — the iframe is fully initialized
+            // here. A short delay lets the WebView settle before we call play().
+            if (!_didPlay) {
+              _didPlay = true;
+              Future.delayed(const Duration(milliseconds: 200), () {
+                if (mounted) widget.controller.play();
+              });
+            }
+          },
+          bottomActions: [
+            const SizedBox(width: 8),
+            CurrentPosition(),
+            const SizedBox(width: 8),
+            ProgressBar(isExpanded: true),
+            const SizedBox(width: 8),
+            RemainingDuration(),
+            const SizedBox(width: 8),
+            PlaybackSpeedButton(),
+            const SizedBox(width: 8),
+          ],
+        ),
+        Positioned(
+          top: 6,
+          right: 6,
+          child: GestureDetector(
+            onTap: widget.onClose,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _VideoThumbnailCard extends StatelessWidget {
   final YouTubeVideo video;
-  final String searchTerm;
+  final VoidCallback onPlay;
 
-  const _VideoThumbnailCard({required this.video, required this.searchTerm});
+  const _VideoThumbnailCard({required this.video, required this.onPlay});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        AnalyticsService.instance.logYouTubeVideoPlayed(
-          videoId: video.videoId,
-          videoTitle: video.title,
-          searchTerm: searchTerm,
-        );
-        _openPlayer(context);
-      },
+      onTap: onPlay,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
@@ -155,20 +260,20 @@ class _VideoThumbnailCard extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                 ),
               ),
             ),
             // Play button
             Center(
               child: Container(
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.9),
+                  color: Colors.redAccent.withValues(alpha: 0.9),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
               ),
             ),
             // Title at bottom
@@ -198,197 +303,9 @@ class _VideoThumbnailCard extends StatelessWidget {
           ),
         ),
       );
-
-  void _openPlayer(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (_) => _YouTubePlayerSheet(videoId: video.videoId, title: video.title),
-    );
-  }
 }
 
-class _YouTubePlayerSheet extends StatefulWidget {
-  final String videoId;
-  final String title;
-
-  const _YouTubePlayerSheet({required this.videoId, required this.title});
-
-  @override
-  State<_YouTubePlayerSheet> createState() => _YouTubePlayerSheetState();
-}
-
-class _YouTubePlayerSheetState extends State<_YouTubePlayerSheet> {
-  late YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
-    );
-  }
-
-  Future<void> _enterFullScreen() async {
-    final position = _controller.value.position;
-    _controller.pause();
-    AnalyticsService.instance.logYouTubeFullscreen(videoId: widget.videoId);
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => _FullScreenVideoPage(
-          videoId: widget.videoId,
-          startAt: position,
-          title: widget.title,
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.pause();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border.all(color: AppColors.glassBorder, width: 1),
-      ),
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            YoutubePlayer(
-              controller: _controller,
-              showVideoProgressIndicator: true,
-              progressIndicatorColor: Colors.redAccent,
-              bottomActions: [
-                const SizedBox(width: 8),
-                CurrentPosition(),
-                const SizedBox(width: 8),
-                ProgressBar(isExpanded: true),
-                const SizedBox(width: 8),
-                RemainingDuration(),
-                const SizedBox(width: 8),
-                PlaybackSpeedButton(),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.fullscreen, color: Colors.white),
-                  onPressed: _enterFullScreen,
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              child: Text(
-                widget.title,
-                style: AppTextStyles.bodyMedium,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FullScreenVideoPage extends StatefulWidget {
-  final String videoId;
-  final Duration startAt;
-  final String title;
-
-  const _FullScreenVideoPage({
-    required this.videoId,
-    required this.startAt,
-    required this.title,
-  });
-
-  @override
-  State<_FullScreenVideoPage> createState() => _FullScreenVideoPageState();
-}
-
-class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
-  late YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.videoId,
-      flags: YoutubePlayerFlags(
-        autoPlay: true,
-        startAt: widget.startAt.inSeconds,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.pause();
-    _controller.dispose();
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: YoutubePlayer(
-          controller: _controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.redAccent,
-          bottomActions: [
-            const SizedBox(width: 8),
-            CurrentPosition(),
-            const SizedBox(width: 8),
-            ProgressBar(isExpanded: true),
-            const SizedBox(width: 8),
-            RemainingDuration(),
-            const SizedBox(width: 8),
-            PlaybackSpeedButton(),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Fallback when API key is not set — shows YouTube search links
+/// Fallback when search returns no results — shows YouTube search links
 class _FallbackSearchLinks extends StatelessWidget {
   final List<String> searchTerms;
 

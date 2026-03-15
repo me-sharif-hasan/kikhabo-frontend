@@ -35,11 +35,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.textPrimary),
-          onPressed: () {
-            AnalyticsService.instance.logDrawerOpened();
-            _scaffoldKey.currentState?.openDrawer();
+        leading: Builder(
+          builder: (ctx) {
+            final canGoBack = Navigator.of(ctx).canPop();
+            return canGoBack
+                ? IconButton(
+                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  )
+                : IconButton(
+                    icon: Icon(Icons.menu, color: AppColors.textPrimary),
+                    onPressed: () {
+                      AnalyticsService.instance.logDrawerOpened();
+                      _scaffoldKey.currentState?.openDrawer();
+                    },
+                  );
           },
         ),
         actions: [
@@ -157,11 +167,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
       body: PopScope(
-        canPop: context.canPop(),
+        // Only let natural back through on home (so the app can exit).
+        // Everywhere else we intercept and decide in onPopInvokedWithResult.
+        canPop: _isHomeRoute(context),
         onPopInvokedWithResult: (didPop, result) {
           if (!didPop) {
-            final currentLocation = GoRouterState.of(context).uri.toString();
-            if (currentLocation != '/dashboard/home') {
+            // Check the live Navigator stack at press-time (not build-time).
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
               context.go('/dashboard/home');
             }
           }
@@ -176,6 +190,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  bool _isHomeRoute(BuildContext context) {
+    final uri = GoRouterState.of(context).uri.toString();
+    return uri == '/dashboard/home' || uri == '/dashboard/home/';
   }
 
   void _showThemePicker(BuildContext context) {

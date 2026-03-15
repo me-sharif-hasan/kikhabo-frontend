@@ -185,50 +185,53 @@ class _InlinePlayerState extends State<_InlinePlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        YoutubePlayer(
-          controller: widget.controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.redAccent,
-          onReady: () {
-            // onReady is the most reliable hook — the iframe is fully initialized
-            // here. A short delay lets the WebView settle before we call play().
-            if (!_didPlay) {
-              _didPlay = true;
-              Future.delayed(const Duration(milliseconds: 200), () {
-                if (mounted) widget.controller.play();
-              });
-            }
-          },
-          bottomActions: [
-            const SizedBox(width: 8),
-            CurrentPosition(),
-            const SizedBox(width: 8),
-            ProgressBar(isExpanded: true),
-            const SizedBox(width: 8),
-            RemainingDuration(),
-            const SizedBox(width: 8),
-            PlaybackSpeedButton(),
-            const SizedBox(width: 8),
-          ],
-        ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: GestureDetector(
-            onTap: widget.onClose,
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: const BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
+    return YoutubePlayerBuilder(
+      player: YoutubePlayer(
+        controller: widget.controller,
+        showVideoProgressIndicator: true,
+        progressIndicatorColor: Colors.redAccent,
+        onReady: () {
+          if (!_didPlay) {
+            _didPlay = true;
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) widget.controller.play();
+            });
+          }
+        },
+        bottomActions: [
+          const SizedBox(width: 8),
+          CurrentPosition(),
+          const SizedBox(width: 8),
+          ProgressBar(isExpanded: true),
+          const SizedBox(width: 8),
+          RemainingDuration(),
+          const SizedBox(width: 8),
+          PlaybackSpeedButton(),
+          const SizedBox(width: 4),
+          FullScreenButton(),
+          const SizedBox(width: 8),
+        ],
+      ),
+      builder: (context, player) => Stack(
+        children: [
+          player,
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: widget.onClose,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 16),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

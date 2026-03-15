@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -167,9 +168,6 @@ class _VideoPageViewState extends State<_VideoPageView> {
 }
 
 /// Inline YouTube player that replaces the thumbnail in-place.
-/// StatefulWidget so we can listen to the controller and force
-/// play() once the WebView is ready — Android blocks autoPlay
-/// without an explicit programmatic play() call.
 class _InlinePlayer extends StatefulWidget {
   final YoutubePlayerController controller;
   final VoidCallback onClose;
@@ -183,54 +181,177 @@ class _InlinePlayer extends StatefulWidget {
 class _InlinePlayerState extends State<_InlinePlayer> {
   bool _didPlay = false;
 
+  void _openFullScreen(BuildContext context) {
+    final videoId = widget.controller.metadata.videoId.isNotEmpty
+        ? widget.controller.metadata.videoId
+        : widget.controller.initialVideoId;
+    final startAt = widget.controller.value.position.inSeconds;
+    widget.controller.pause();
+
+    Navigator.of(context, rootNavigator: true)
+        .push(MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => _FullScreenPlayerPage(
+            videoId: videoId,
+            startAt: startAt,
+          ),
+        ))
+        .then((_) {
+      // Restore portrait and system UI when fullscreen closes
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return YoutubePlayerBuilder(
-      player: YoutubePlayer(
-        controller: widget.controller,
-        showVideoProgressIndicator: true,
-        progressIndicatorColor: Colors.redAccent,
-        onReady: () {
-          if (!_didPlay) {
-            _didPlay = true;
-            Future.delayed(const Duration(milliseconds: 200), () {
-              if (mounted) widget.controller.play();
-            });
-          }
-        },
-        bottomActions: [
-          const SizedBox(width: 8),
-          CurrentPosition(),
-          const SizedBox(width: 8),
-          ProgressBar(isExpanded: true),
-          const SizedBox(width: 8),
-          RemainingDuration(),
-          const SizedBox(width: 8),
-          PlaybackSpeedButton(),
-          const SizedBox(width: 4),
-          FullScreenButton(),
-          const SizedBox(width: 8),
-        ],
-      ),
-      builder: (context, player) => Stack(
-        children: [
-          player,
-          Positioned(
-            top: 6,
-            right: 6,
-            child: GestureDetector(
-              onTap: widget.onClose,
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
+    return Stack(
+      children: [
+        YoutubePlayer(
+          controller: widget.controller,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: Colors.redAccent,
+          onReady: () {
+            if (!_didPlay) {
+              _didPlay = true;
+              Future.delayed(const Duration(milliseconds: 200), () {
+                if (mounted) widget.controller.play();
+              });
+            }
+          },
+          bottomActions: [
+            const SizedBox(width: 8),
+            CurrentPosition(),
+            const SizedBox(width: 8),
+            ProgressBar(isExpanded: true),
+            const SizedBox(width: 8),
+            RemainingDuration(),
+            const SizedBox(width: 8),
+            PlaybackSpeedButton(),
+            const SizedBox(width: 4),
+            // Custom fullscreen button — pushes a true full-screen route
+            Builder(
+              builder: (ctx) => GestureDetector(
+                onTap: () => _openFullScreen(ctx),
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(Icons.fullscreen, color: Colors.white, size: 24),
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
             ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        Positioned(
+          top: 6,
+          right: 6,
+          child: GestureDetector(
+            onTap: widget.onClose,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+/// True full-screen player page — black background, landscape, immersive mode.
+class _FullScreenPlayerPage extends StatefulWidget {
+  final String videoId;
+  final int startAt;
+
+  const _FullScreenPlayerPage({required this.videoId, required this.startAt});
+
+  @override
+  State<_FullScreenPlayerPage> createState() => _FullScreenPlayerPageState();
+}
+
+class _FullScreenPlayerPageState extends State<_FullScreenPlayerPage> {
+  late YoutubePlayerController _controller;
+  bool _didPlay = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController(
+      initialVideoId: widget.videoId,
+      flags: YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        startAt: widget.startAt,
+      ),
+    );
+    // Force landscape + hide system UI
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) {
+            SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          }
+        },
+        child: Center(
+          child: YoutubePlayer(
+            controller: _controller,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: Colors.redAccent,
+            onReady: () {
+              if (!_didPlay) {
+                _didPlay = true;
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  if (mounted) _controller.play();
+                });
+              }
+            },
+            bottomActions: [
+              const SizedBox(width: 8),
+              CurrentPosition(),
+              const SizedBox(width: 8),
+              ProgressBar(isExpanded: true),
+              const SizedBox(width: 8),
+              RemainingDuration(),
+              const SizedBox(width: 8),
+              PlaybackSpeedButton(),
+              // Exit fullscreen button
+              GestureDetector(
+                onTap: () {
+                  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                  Navigator.of(context).pop();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(Icons.fullscreen_exit, color: Colors.white, size: 24),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
       ),
     );
   }

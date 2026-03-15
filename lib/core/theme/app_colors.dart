@@ -38,7 +38,7 @@ class AppColors {
     glass: const Color(0xFFFFFFFF).withOpacity(0.1),
     glassBorder: const Color(0xFFFFFFFF).withOpacity(0.2),
     glassText: const Color(0xFFFFFFFF).withOpacity(0.9),
-    glassTextSecondary: const Color(0xFFFFFFFF).withOpacity(0.7),
+    glassTextSecondary: const Color(0xFFFFFFFF).withOpacity(0.9),
     surface: const Color(0xFF1F2937),
     background: const Color(0xFF111827),
     error: const Color(0xFFEF4444),
@@ -178,4 +178,12 @@ class AppColors {
   // Aliases
   static Color get textPrimary => _current.glassText;
   static Color get textSecondary => _current.glassTextSecondary;
+
+  /// Primary color suitable for text/icons on card/glass surfaces.
+  /// On dark themes returns [primaryLight] (brighter, better contrast);
+  /// on light themes returns [primary] (already vivid enough).
+  static Color get primaryOnSurface =>
+      _current.isDark ? _current.primaryLight : _current.primary;
+
+  static bool get isDark => _current.isDark;
 }

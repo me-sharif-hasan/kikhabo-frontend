@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'core/services/ad_service.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/notification_navigation_handler.dart';
@@ -32,8 +33,9 @@ import 'presentation/screens/dashboard/recipe_detail_screen.dart';
 import 'data/models/meal.dart';
 import 'data/models/recipe.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AdService.instance.initialize();
   runApp(const ProviderScope(child: KikhaboApp()));
 }
 

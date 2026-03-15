@@ -555,22 +555,27 @@ class _HeroBanner extends StatelessWidget {
                   color: AppColors.glassBorder,
                 ),
 
-                // Browse button
+                // Browse button — filled so it's always readable
                 GestureDetector(
                   onTap: onBrowseTap,
                   behavior: HitTestBehavior.opaque,
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 13),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(11)),
+                    ),
                     child: Row(
                       children: [
                         Icon(Icons.menu_book_rounded,
-                            color: AppColors.primary, size: 16),
+                            color: AppColors.onPrimary, size: 16),
                         const SizedBox(width: 6),
                         Text(
                           'Browse',
                           style: TextStyle(
-                            color: AppColors.primary,
+                            color: AppColors.onPrimary,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -622,14 +627,14 @@ class _RandomRecipesSection extends StatelessWidget {
                   Text(
                     'See all',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: AppColors.onPrimary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_forward_rounded,
-                      size: 16, color: AppColors.primary),
+                      size: 16, color: AppColors.onPrimary),
                 ],
               ),
             ),
@@ -717,15 +722,23 @@ class _RandomRecipeCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     if (recipe.source != null)
-                      Text(
-                        recipe.source!,
-                        style: TextStyle(
-                          fontSize: 10,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
                           color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        child: Text(
+                          recipe.source!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: AppColors.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                   ],
                 ),

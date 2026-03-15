@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/services/ad_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -31,7 +33,14 @@ class RecipeDetailScreen extends ConsumerWidget {
     final userCountry = ref.watch(userProvider).user?.country;
     final searchTerms = _searchTerms(userCountry);
 
-    return SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          AdService.instance.show(onDone: () => context.pop());
+        }
+      },
+      child: SafeArea(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +58,7 @@ class RecipeDetailScreen extends ConsumerWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,8 +105,9 @@ class RecipeDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
+      ), // SingleChildScrollView
+      ), // SafeArea
+    ); // PopScope
   }
 }
 
@@ -203,7 +213,7 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.primary),
+          Icon(icon, size: 14, color: AppColors.primaryOnSurface),
           const SizedBox(width: 7),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +394,7 @@ class _SectionHeader extends StatelessWidget {
             width: 4,
             height: 22,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: AppColors.primaryOnSurface,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -436,7 +446,7 @@ class _IngredientsList extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: AppColors.primaryOnSurface,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -488,7 +498,7 @@ class _CookingGuide extends StatelessWidget {
                   child: Text(
                     '•',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: AppColors.primaryOnSurface,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -582,7 +592,7 @@ class _BookmarkButton extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isBookmarked ? AppColors.primary : Colors.black.withValues(alpha: 0.45),
+          color: isBookmarked ? AppColors.accent : Colors.black.withValues(alpha: 0.45),
           shape: BoxShape.circle,
         ),
         child: Icon(

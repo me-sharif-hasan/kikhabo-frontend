@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/services/ad_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -134,7 +135,8 @@ class _FridgeScanScreenState extends ConsumerState<FridgeScanScreen> {
       ),
     );
 
-    Navigator.of(context).pop();
+    // Show interstitial then dismiss the scan screen
+    AdService.instance.show(onDone: () => Navigator.of(context).pop());
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────

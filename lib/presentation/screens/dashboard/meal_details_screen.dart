@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/ad_service.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -128,14 +129,21 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     final hasGroceries = _meal.groceries != null && _meal.groceries!.isNotEmpty;
     final hasGroceryNames = _meal.groceryNames != null && _meal.groceryNames!.isNotEmpty;
 
-    return Scaffold(
+    void goBack() => AdService.instance.show(onDone: () => context.pop());
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) goBack();
+      },
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => context.pop(),
+          onPressed: goBack,
         ),
         title: Text(
           'Meal Details',
@@ -434,7 +442,8 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
           ),
         ),
       ),
-    );
+    ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildInfoChip(IconData icon, String value, Color bgColor, Color fgColor) {

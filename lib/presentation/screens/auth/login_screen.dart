@@ -215,10 +215,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.restaurant_menu_rounded,
-                        size: 60,
-                        color: AppColors.primaryLight,
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 60,
+                        height: 60,
                       ),
                     ),
 

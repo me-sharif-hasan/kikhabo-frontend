@@ -32,6 +32,7 @@ import 'presentation/screens/dashboard/recipe_list_screen.dart';
 import 'presentation/screens/dashboard/recipe_detail_screen.dart';
 import 'data/models/meal.dart';
 import 'data/models/recipe.dart';
+import 'domain/providers/recipe_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -233,6 +234,13 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
             return DashboardScreen(child: RecipeDetailScreen(recipe: recipe));
           },
         ),
+        GoRoute(
+          path: '/dashboard/recipes/:recipeId',
+          builder: (context, state) {
+            final recipeId = state.pathParameters['recipeId']!;
+            return DashboardScreen(child: _RecipeDetailByIdScreen(recipeId: recipeId));
+          },
+        ),
       ],
     );
 
@@ -261,6 +269,42 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         (themeType),
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+/// Fetches a recipe by ID and renders [RecipeDetailScreen].
+/// Used by the notification deep-link route /dashboard/recipes/:recipeId.
+class _RecipeDetailByIdScreen extends ConsumerWidget {
+  final String recipeId;
+
+  const _RecipeDetailByIdScreen({required this.recipeId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(recipeDetailProvider(recipeId));
+    return async.when(
+      loading: () => const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+      ),
+      error: (e, _) => Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+              const SizedBox(height: 12),
+              Text(
+                'Could not load recipe',
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (detail) => RecipeDetailScreen(recipe: detail),
     );
   }
 }

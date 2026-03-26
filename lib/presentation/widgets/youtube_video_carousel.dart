@@ -180,6 +180,7 @@ class _InlinePlayer extends StatefulWidget {
 
 class _InlinePlayerState extends State<_InlinePlayer> {
   bool _didPlay = false;
+  bool _isReady = false;
 
   void _openFullScreen(BuildContext context) {
     final videoId = widget.controller.metadata.videoId.isNotEmpty
@@ -197,7 +198,6 @@ class _InlinePlayerState extends State<_InlinePlayer> {
           ),
         ))
         .then((_) {
-      // Restore portrait and system UI when fullscreen closes
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     });
@@ -209,11 +209,11 @@ class _InlinePlayerState extends State<_InlinePlayer> {
       children: [
         YoutubePlayer(
           controller: widget.controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.redAccent,
+          showVideoProgressIndicator: false,
           onReady: () {
             if (!_didPlay) {
               _didPlay = true;
+              setState(() => _isReady = true);
               Future.delayed(const Duration(milliseconds: 200), () {
                 if (mounted) widget.controller.play();
               });
@@ -229,7 +229,6 @@ class _InlinePlayerState extends State<_InlinePlayer> {
             const SizedBox(width: 8),
             PlaybackSpeedButton(),
             const SizedBox(width: 4),
-            // Custom fullscreen button — pushes a true full-screen route
             Builder(
               builder: (ctx) => GestureDetector(
                 onTap: () => _openFullScreen(ctx),
@@ -242,6 +241,51 @@ class _InlinePlayerState extends State<_InlinePlayer> {
             const SizedBox(width: 8),
           ],
         ),
+
+        // Smooth black cover while the WebView is initializing —
+        // hides the choppy partial render until the player is truly ready.
+        if (!_isReady)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.redAccent,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+          ),
+
+        // Ended overlay — stops the spinner and shows a replay button.
+        ValueListenableBuilder<YoutubePlayerValue>(
+          valueListenable: widget.controller,
+          builder: (context, value, _) {
+            if (value.playerState != PlayerState.ended) {
+              return const SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: Container(
+                color: Colors.black87,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () => widget.controller.seekTo(Duration.zero),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        color: Colors.white24,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.replay, color: Colors.white, size: 32),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Close button — always on top.
         Positioned(
           top: 6,
           right: 6,
@@ -276,6 +320,7 @@ class _FullScreenPlayerPage extends StatefulWidget {
 class _FullScreenPlayerPageState extends State<_FullScreenPlayerPage> {
   late YoutubePlayerController _controller;
   bool _didPlay = false;
+  bool _isReady = false;
 
   @override
   void initState() {
@@ -288,7 +333,6 @@ class _FullScreenPlayerPageState extends State<_FullScreenPlayerPage> {
         startAt: widget.startAt,
       ),
     );
-    // Force landscape + hide system UI
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -314,43 +358,88 @@ class _FullScreenPlayerPageState extends State<_FullScreenPlayerPage> {
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
           }
         },
-        child: Center(
-          child: YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: Colors.redAccent,
-            onReady: () {
-              if (!_didPlay) {
-                _didPlay = true;
-                Future.delayed(const Duration(milliseconds: 200), () {
-                  if (mounted) _controller.play();
-                });
-              }
-            },
-            bottomActions: [
-              const SizedBox(width: 8),
-              CurrentPosition(),
-              const SizedBox(width: 8),
-              ProgressBar(isExpanded: true),
-              const SizedBox(width: 8),
-              RemainingDuration(),
-              const SizedBox(width: 8),
-              PlaybackSpeedButton(),
-              // Exit fullscreen button
-              GestureDetector(
-                onTap: () {
-                  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                  Navigator.of(context).pop();
+        child: Stack(
+          children: [
+            Center(
+              child: YoutubePlayer(
+                controller: _controller,
+                showVideoProgressIndicator: false,
+                onReady: () {
+                  if (!_didPlay) {
+                    _didPlay = true;
+                    setState(() => _isReady = true);
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      if (mounted) _controller.play();
+                    });
+                  }
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(Icons.fullscreen_exit, color: Colors.white, size: 24),
+                bottomActions: [
+                  const SizedBox(width: 8),
+                  CurrentPosition(),
+                  const SizedBox(width: 8),
+                  ProgressBar(isExpanded: true),
+                  const SizedBox(width: 8),
+                  RemainingDuration(),
+                  const SizedBox(width: 8),
+                  PlaybackSpeedButton(),
+                  GestureDetector(
+                    onTap: () {
+                      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                      Navigator.of(context).pop();
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(Icons.fullscreen_exit, color: Colors.white, size: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+
+            // Smooth black cover while WebView initializes.
+            if (!_isReady)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.redAccent,
+                      strokeWidth: 2,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-            ],
-          ),
+
+            // Ended overlay — replay button, no spinning.
+            ValueListenableBuilder<YoutubePlayerValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) {
+                if (value.playerState != PlayerState.ended) {
+                  return const SizedBox.shrink();
+                }
+                return Positioned.fill(
+                  child: Container(
+                    color: Colors.black87,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => _controller.seekTo(Duration.zero),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: const BoxDecoration(
+                            color: Colors.white24,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.replay, color: Colors.white, size: 36),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

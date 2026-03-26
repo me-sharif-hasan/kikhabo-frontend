@@ -137,26 +137,23 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) goBack();
       },
-      child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: goBack,
-        ),
-        title: Text(
-          'Meal Details',
-          style: AppTextStyles.titleLarge,
-        ),
-      ),
-      body: SafeArea(
+      child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Hero YouTube video — full-bleed at the top
+              if (_meal.youtubeSearchTerms != null && _meal.youtubeSearchTerms!.isNotEmpty)
+                YouTubeVideoCarousel(
+                  searchTerms: _meal.youtubeSearchTerms!,
+                  showHeader: false,
+                ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // Header Card
               GlassCard(
                 blur: 10,
@@ -342,12 +339,8 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // YouTube Recipe Carousel
-              if (_meal.youtubeSearchTerms != null && _meal.youtubeSearchTerms!.isNotEmpty) ...[
-                YouTubeVideoCarousel(searchTerms: _meal.youtubeSearchTerms!),
-                const BannerAdWidget(margin: EdgeInsets.only(top: 12, bottom: 4)),
-                const SizedBox(height: 12),
-              ],
+              // Banner ad
+              const BannerAdWidget(margin: EdgeInsets.only(top: 4, bottom: 12)),
 
               // Rating Section
               GlassCard(
@@ -440,11 +433,13 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+                  ],
+                ), // inner Column
+              ), // Padding
             ],
-          ),
-        ),
-      ),
-    ), // Scaffold
+          ), // outer Column
+        ), // SingleChildScrollView
+      ), // SafeArea
     ); // PopScope
   }
 

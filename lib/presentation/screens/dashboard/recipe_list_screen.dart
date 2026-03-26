@@ -29,15 +29,24 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialQuery ?? '');
     _scrollController = ScrollController()..addListener(_onScroll);
 
-    if (!_isBookmarks &&
-        widget.initialQuery != null &&
-        widget.initialQuery!.isNotEmpty) {
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      // Navigated here with an explicit query (e.g. from home screen search).
+      // Kick off a fresh search and show that query in the field.
+      _searchController = TextEditingController(text: widget.initialQuery);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(recipeListProvider.notifier).search(widget.initialQuery!);
+        if (!_isBookmarks) {
+          ref.read(recipeListProvider.notifier).search(widget.initialQuery!);
+        }
       });
+    } else {
+      // Navigated here without a query (e.g. bottom nav tap).
+      // Restore whatever the provider currently has so field matches results.
+      final currentQuery = _isBookmarks
+          ? ref.read(bookmarksListProvider).query
+          : ref.read(recipeListProvider).query;
+      _searchController = TextEditingController(text: currentQuery);
     }
   }
 
@@ -233,7 +242,7 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
 
 // ── Search bar ────────────────────────────────────────────────────────────────
 
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
@@ -247,6 +256,34 @@ class _SearchBar extends StatelessWidget {
   });
 
   @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(_SearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -255,17 +292,17 @@ class _SearchBar extends StatelessWidget {
         border: Border.all(color: AppColors.glassBorder),
       ),
       child: TextField(
-        controller: controller,
-        onChanged: onChanged,
+        controller: widget.controller,
+        onChanged: widget.onChanged,
         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: widget.hint,
           hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           prefixIcon: Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-          suffixIcon: controller.text.isNotEmpty
+          suffixIcon: widget.controller.text.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.clear, color: AppColors.textSecondary, size: 18),
-                  onPressed: onClear,
+                  onPressed: widget.onClear,
                 )
               : null,
           border: InputBorder.none,

@@ -56,6 +56,14 @@ class NotificationNavigationHandler {
         router.go('/dashboard/statistics');
       case 'family_activity':
         router.go('/dashboard/family');
+      case 'healthy_meal':
+        final extra = _decodeExtra(data['extra']);
+        final recipeId = extra['recipeId'] as String?;
+        if (recipeId != null && recipeId.isNotEmpty) {
+          router.go('/dashboard/recipes/$recipeId');
+        } else if (route != null && route.isNotEmpty) {
+          router.go(route);
+        }
       default:
         // Fall back to the route field if type is unknown
         if (route != null && route.isNotEmpty) router.go(route);

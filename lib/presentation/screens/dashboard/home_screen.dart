@@ -16,6 +16,7 @@ import '../../../domain/providers/meal_provider.dart';
 import '../../../domain/providers/ingredient_scan_provider.dart';
 import '../../../domain/providers/recipe_provider.dart';
 import '../../../domain/providers/user_provider.dart';
+import '../../../core/services/update_service.dart';
 import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/glass_button.dart';
 import '../../widgets/glass_card.dart';
@@ -46,6 +47,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     AnalyticsService.instance.logScreenView('home');
+    // Check for Play Store update after the first frame is rendered.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.instance.checkAndPrompt(context);
+    });
   }
 
   @override
@@ -476,6 +481,12 @@ class _GlowFridgeButton extends StatelessWidget {
 
 // ── Hero banner (greeting + search + action pills) ────────────────────────────
 
+class _TimeOfDayInfo {
+  final String greeting;
+  final String assetPath;
+  const _TimeOfDayInfo({required this.greeting, required this.assetPath});
+}
+
 class _HeroBanner extends StatelessWidget {
   final String? userName;
   final VoidCallback onSearchTap;
@@ -487,105 +498,144 @@ class _HeroBanner extends StatelessWidget {
     required this.onBrowseTap,
   });
 
-  String _greeting() {
+  _TimeOfDayInfo _getTimeOfDay() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 4) return const _TimeOfDayInfo(greeting: 'Good night', assetPath: 'assets/night.png');
+    if (h < 7) return const _TimeOfDayInfo(greeting: 'Rise and shine', assetPath: 'assets/sunrise.png');
+    if (h < 12) return const _TimeOfDayInfo(greeting: 'Good morning', assetPath: 'assets/morning.png');
+    if (h < 15) return const _TimeOfDayInfo(greeting: 'Good noon', assetPath: 'assets/noon.png');
+    if (h < 20) return const _TimeOfDayInfo(greeting: 'Good evening', assetPath: 'assets/evening.png');
+    return const _TimeOfDayInfo(greeting: 'Good night', assetPath: 'assets/night.png');
   }
 
   @override
   Widget build(BuildContext context) {
     final name = userName != null && userName!.isNotEmpty ? userName! : 'there';
+    final tod = _getTimeOfDay();
     return GlassCard(
       blur: 14,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.zero,
+      child: Stack(
         children: [
-          // Greeting
-          Text(
-            '${_greeting()}, $name! 👋',
-            style: AppTextStyles.headlineSmall,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Plan your meals or explore dishes from around the world.',
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: 16),
-
-          // Joined search + browse bar
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.background.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.glassBorder),
-            ),
-            child: Row(
+          // Content: greeting text + search bar with padding
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Search side
-                Expanded(
-                  child: GestureDetector(
-                    onTap: onSearchTap,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 13),
-                      child: Row(
-                        children: [
-                          Icon(Icons.search_rounded,
-                              color: AppColors.primary, size: 20),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Search recipes...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                // Greeting text — right-padded to not overlap the image
+                Padding(
+                  padding: const EdgeInsets.only(right: 84),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${tod.greeting}, $name! 👋',
+                        style: AppTextStyles.headlineSmall,
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Plan your meals or explore dishes from around the world.',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                // Vertical divider
+                // Joined search + browse bar
                 Container(
-                  width: 1,
-                  height: 28,
-                  color: AppColors.glassBorder,
-                ),
-
-                // Browse button — filled so it's always readable
-                GestureDetector(
-                  onTap: onBrowseTap,
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 13),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.horizontal(
-                          right: Radius.circular(11)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.menu_book_rounded,
-                            color: AppColors.onPrimary, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Browse',
-                          style: TextStyle(
-                            color: AppColors.onPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                  decoration: BoxDecoration(
+                    color: AppColors.background.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.glassBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      // Search side
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: onSearchTap,
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 13),
+                            child: Row(
+                              children: [
+                                Icon(Icons.search_rounded,
+                                    color: AppColors.primary, size: 20),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Search recipes...',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Vertical divider
+                      Container(
+                        width: 1,
+                        height: 28,
+                        color: AppColors.glassBorder,
+                      ),
+
+                      // Browse button
+                      GestureDetector(
+                        onTap: onBrowseTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 13),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(11)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.menu_book_rounded,
+                                  color: AppColors.onPrimary, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Browse',
+                                style: TextStyle(
+                                  color: AppColors.onPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
+            ),
+          ),
+
+          // Time-of-day image: flush top-right, no padding
+          // top-right corner follows card radius; bottom-left is rounded
+          Positioned(
+            top: 0,
+            right: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(14),
+              ),
+              child: Image.asset(
+                tod.assetPath,
+                width: 88,
+                height: 88,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ],

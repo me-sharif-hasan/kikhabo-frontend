@@ -88,4 +88,28 @@ class AuthDataSource {
       rethrow;
     }
   }
+
+  Future<OtpResponseDto> verifyOtp(String email, String otp) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.verifyOtp,
+        data: {'email': email, 'otp': otp},
+      );
+      return OtpResponseDto.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<OtpResponseDto> resendOtp(String email) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.resendOtp,
+        data: {'email': email},
+      );
+      return OtpResponseDto.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

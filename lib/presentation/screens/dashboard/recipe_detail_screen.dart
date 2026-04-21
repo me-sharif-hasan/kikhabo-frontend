@@ -261,23 +261,6 @@ class _SkeletonCard extends StatelessWidget {
       );
 }
 
-class _LoadingSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          const SizedBox(height: 32),
-          Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              'Loading recipe details...',
-              style: AppTextStyles.bodySmall,
-            ),
-          ),
-        ],
-      );
-}
-
 class _ErrorSection extends StatelessWidget {
   final String message;
 

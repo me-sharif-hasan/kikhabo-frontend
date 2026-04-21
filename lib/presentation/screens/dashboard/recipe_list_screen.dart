@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/ad_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../widgets/banner_ad_widget.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -88,7 +88,14 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
         ? ref.watch(bookmarksListProvider)
         : ref.watch(recipeListProvider);
 
-    return SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          AdService.instance.show(onDone: () => context.pop());
+        }
+      },
+      child: SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -137,7 +144,8 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
           ),
         ],
       ),
-    );
+      ), // SafeArea
+    ); // PopScope
   }
 
   Widget _buildContent(RecipeListState state) {
@@ -340,20 +348,10 @@ class _RecipeCard extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-              child: SizedBox(
-                width: 108,
-                height: 108,
-                child: _RecipeImage(imageUrl: recipe.image),
-              ),
-            ),
-
             // Content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -483,43 +481,6 @@ class _TimeBadge extends StatelessWidget {
   }
 }
 
-// ── Shared image widget with placeholder ──────────────────────────────────────
-
-class _RecipeImage extends StatelessWidget {
-  final String? imageUrl;
-  final double? size;
-
-  const _RecipeImage({this.imageUrl, this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) return _placeholder();
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
-      fit: BoxFit.cover,
-      width: size,
-      height: size,
-      errorWidget: (_, __, ___) => _placeholder(),
-      placeholder: (_, __) => _placeholder(loading: true),
-    );
-  }
-
-  Widget _placeholder({bool loading = false}) {
-    return Container(
-      color: AppColors.glass,
-      child: Center(
-        child: loading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: AppColors.primary, strokeWidth: 2),
-              )
-            : Image.asset('assets/logo_bg.png'),
-      ),
-    );
-  }
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -104,3 +104,35 @@ abstract class GetUserResponse with _$GetUserResponse {
 
   factory GetUserResponse.fromJson(Map<String, dynamic> json) => _$GetUserResponseFromJson(json);
 }
+
+/// DTO for OTP verification request.
+@freezed
+abstract class OtpVerifyDto with _$OtpVerifyDto {
+  const factory OtpVerifyDto({
+    required String email,
+    required String otp,
+  }) = _OtpVerifyDto;
+
+  factory OtpVerifyDto.fromJson(Map<String, dynamic> json) => _$OtpVerifyDtoFromJson(json);
+}
+
+/// DTO for OTP resend request.
+@freezed
+abstract class OtpResendDto with _$OtpResendDto {
+  const factory OtpResendDto({
+    required String email,
+  }) = _OtpResendDto;
+
+  factory OtpResendDto.fromJson(Map<String, dynamic> json) => _$OtpResendDtoFromJson(json);
+}
+
+/// Response object for OTP verification/resend.
+@freezed
+abstract class OtpResponseDto with _$OtpResponseDto {
+  const factory OtpResponseDto({
+    required String status,
+    String? message,
+  }) = _OtpResponseDto;
+
+  factory OtpResponseDto.fromJson(Map<String, dynamic> json) => _$OtpResponseDtoFromJson(json);
+}

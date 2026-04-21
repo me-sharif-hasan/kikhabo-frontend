@@ -1757,4 +1757,799 @@ $PreferenceCopyWith<$Res>? get preference {
 }
 }
 
+
+/// @nodoc
+mixin _$OtpVerifyDto {
+
+ String get email; String get otp;
+/// Create a copy of OtpVerifyDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OtpVerifyDtoCopyWith<OtpVerifyDto> get copyWith => _$OtpVerifyDtoCopyWithImpl<OtpVerifyDto>(this as OtpVerifyDto, _$identity);
+
+  /// Serializes this OtpVerifyDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OtpVerifyDto&&(identical(other.email, email) || other.email == email)&&(identical(other.otp, otp) || other.otp == otp));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email,otp);
+
+@override
+String toString() {
+  return 'OtpVerifyDto(email: $email, otp: $otp)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OtpVerifyDtoCopyWith<$Res>  {
+  factory $OtpVerifyDtoCopyWith(OtpVerifyDto value, $Res Function(OtpVerifyDto) _then) = _$OtpVerifyDtoCopyWithImpl;
+@useResult
+$Res call({
+ String email, String otp
+});
+
+
+
+
+}
+/// @nodoc
+class _$OtpVerifyDtoCopyWithImpl<$Res>
+    implements $OtpVerifyDtoCopyWith<$Res> {
+  _$OtpVerifyDtoCopyWithImpl(this._self, this._then);
+
+  final OtpVerifyDto _self;
+  final $Res Function(OtpVerifyDto) _then;
+
+/// Create a copy of OtpVerifyDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? email = null,Object? otp = null,}) {
+  return _then(_self.copyWith(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,otp: null == otp ? _self.otp : otp // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OtpVerifyDto].
+extension OtpVerifyDtoPatterns on OtpVerifyDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OtpVerifyDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OtpVerifyDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OtpVerifyDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _OtpVerifyDto():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OtpVerifyDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OtpVerifyDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String email,  String otp)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OtpVerifyDto() when $default != null:
+return $default(_that.email,_that.otp);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String email,  String otp)  $default,) {final _that = this;
+switch (_that) {
+case _OtpVerifyDto():
+return $default(_that.email,_that.otp);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String email,  String otp)?  $default,) {final _that = this;
+switch (_that) {
+case _OtpVerifyDto() when $default != null:
+return $default(_that.email,_that.otp);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _OtpVerifyDto implements OtpVerifyDto {
+  const _OtpVerifyDto({required this.email, required this.otp});
+  factory _OtpVerifyDto.fromJson(Map<String, dynamic> json) => _$OtpVerifyDtoFromJson(json);
+
+@override final  String email;
+@override final  String otp;
+
+/// Create a copy of OtpVerifyDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OtpVerifyDtoCopyWith<_OtpVerifyDto> get copyWith => __$OtpVerifyDtoCopyWithImpl<_OtpVerifyDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OtpVerifyDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtpVerifyDto&&(identical(other.email, email) || other.email == email)&&(identical(other.otp, otp) || other.otp == otp));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email,otp);
+
+@override
+String toString() {
+  return 'OtpVerifyDto(email: $email, otp: $otp)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OtpVerifyDtoCopyWith<$Res> implements $OtpVerifyDtoCopyWith<$Res> {
+  factory _$OtpVerifyDtoCopyWith(_OtpVerifyDto value, $Res Function(_OtpVerifyDto) _then) = __$OtpVerifyDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String email, String otp
+});
+
+
+
+
+}
+/// @nodoc
+class __$OtpVerifyDtoCopyWithImpl<$Res>
+    implements _$OtpVerifyDtoCopyWith<$Res> {
+  __$OtpVerifyDtoCopyWithImpl(this._self, this._then);
+
+  final _OtpVerifyDto _self;
+  final $Res Function(_OtpVerifyDto) _then;
+
+/// Create a copy of OtpVerifyDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? email = null,Object? otp = null,}) {
+  return _then(_OtpVerifyDto(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,otp: null == otp ? _self.otp : otp // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$OtpResendDto {
+
+ String get email;
+/// Create a copy of OtpResendDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OtpResendDtoCopyWith<OtpResendDto> get copyWith => _$OtpResendDtoCopyWithImpl<OtpResendDto>(this as OtpResendDto, _$identity);
+
+  /// Serializes this OtpResendDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OtpResendDto&&(identical(other.email, email) || other.email == email));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email);
+
+@override
+String toString() {
+  return 'OtpResendDto(email: $email)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OtpResendDtoCopyWith<$Res>  {
+  factory $OtpResendDtoCopyWith(OtpResendDto value, $Res Function(OtpResendDto) _then) = _$OtpResendDtoCopyWithImpl;
+@useResult
+$Res call({
+ String email
+});
+
+
+
+
+}
+/// @nodoc
+class _$OtpResendDtoCopyWithImpl<$Res>
+    implements $OtpResendDtoCopyWith<$Res> {
+  _$OtpResendDtoCopyWithImpl(this._self, this._then);
+
+  final OtpResendDto _self;
+  final $Res Function(OtpResendDto) _then;
+
+/// Create a copy of OtpResendDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? email = null,}) {
+  return _then(_self.copyWith(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OtpResendDto].
+extension OtpResendDtoPatterns on OtpResendDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OtpResendDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OtpResendDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OtpResendDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _OtpResendDto():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OtpResendDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OtpResendDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String email)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OtpResendDto() when $default != null:
+return $default(_that.email);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String email)  $default,) {final _that = this;
+switch (_that) {
+case _OtpResendDto():
+return $default(_that.email);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String email)?  $default,) {final _that = this;
+switch (_that) {
+case _OtpResendDto() when $default != null:
+return $default(_that.email);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _OtpResendDto implements OtpResendDto {
+  const _OtpResendDto({required this.email});
+  factory _OtpResendDto.fromJson(Map<String, dynamic> json) => _$OtpResendDtoFromJson(json);
+
+@override final  String email;
+
+/// Create a copy of OtpResendDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OtpResendDtoCopyWith<_OtpResendDto> get copyWith => __$OtpResendDtoCopyWithImpl<_OtpResendDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OtpResendDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtpResendDto&&(identical(other.email, email) || other.email == email));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email);
+
+@override
+String toString() {
+  return 'OtpResendDto(email: $email)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OtpResendDtoCopyWith<$Res> implements $OtpResendDtoCopyWith<$Res> {
+  factory _$OtpResendDtoCopyWith(_OtpResendDto value, $Res Function(_OtpResendDto) _then) = __$OtpResendDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String email
+});
+
+
+
+
+}
+/// @nodoc
+class __$OtpResendDtoCopyWithImpl<$Res>
+    implements _$OtpResendDtoCopyWith<$Res> {
+  __$OtpResendDtoCopyWithImpl(this._self, this._then);
+
+  final _OtpResendDto _self;
+  final $Res Function(_OtpResendDto) _then;
+
+/// Create a copy of OtpResendDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? email = null,}) {
+  return _then(_OtpResendDto(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$OtpResponseDto {
+
+ String get status; String? get message;
+/// Create a copy of OtpResponseDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OtpResponseDtoCopyWith<OtpResponseDto> get copyWith => _$OtpResponseDtoCopyWithImpl<OtpResponseDto>(this as OtpResponseDto, _$identity);
+
+  /// Serializes this OtpResponseDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OtpResponseDto&&(identical(other.status, status) || other.status == status)&&(identical(other.message, message) || other.message == message));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,status,message);
+
+@override
+String toString() {
+  return 'OtpResponseDto(status: $status, message: $message)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OtpResponseDtoCopyWith<$Res>  {
+  factory $OtpResponseDtoCopyWith(OtpResponseDto value, $Res Function(OtpResponseDto) _then) = _$OtpResponseDtoCopyWithImpl;
+@useResult
+$Res call({
+ String status, String? message
+});
+
+
+
+
+}
+/// @nodoc
+class _$OtpResponseDtoCopyWithImpl<$Res>
+    implements $OtpResponseDtoCopyWith<$Res> {
+  _$OtpResponseDtoCopyWithImpl(this._self, this._then);
+
+  final OtpResponseDto _self;
+  final $Res Function(OtpResponseDto) _then;
+
+/// Create a copy of OtpResponseDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? message = freezed,}) {
+  return _then(_self.copyWith(
+status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OtpResponseDto].
+extension OtpResponseDtoPatterns on OtpResponseDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OtpResponseDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OtpResponseDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OtpResponseDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _OtpResponseDto():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OtpResponseDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OtpResponseDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status,  String? message)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OtpResponseDto() when $default != null:
+return $default(_that.status,_that.message);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status,  String? message)  $default,) {final _that = this;
+switch (_that) {
+case _OtpResponseDto():
+return $default(_that.status,_that.message);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status,  String? message)?  $default,) {final _that = this;
+switch (_that) {
+case _OtpResponseDto() when $default != null:
+return $default(_that.status,_that.message);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _OtpResponseDto implements OtpResponseDto {
+  const _OtpResponseDto({required this.status, this.message});
+  factory _OtpResponseDto.fromJson(Map<String, dynamic> json) => _$OtpResponseDtoFromJson(json);
+
+@override final  String status;
+@override final  String? message;
+
+/// Create a copy of OtpResponseDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OtpResponseDtoCopyWith<_OtpResponseDto> get copyWith => __$OtpResponseDtoCopyWithImpl<_OtpResponseDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OtpResponseDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtpResponseDto&&(identical(other.status, status) || other.status == status)&&(identical(other.message, message) || other.message == message));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,status,message);
+
+@override
+String toString() {
+  return 'OtpResponseDto(status: $status, message: $message)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OtpResponseDtoCopyWith<$Res> implements $OtpResponseDtoCopyWith<$Res> {
+  factory _$OtpResponseDtoCopyWith(_OtpResponseDto value, $Res Function(_OtpResponseDto) _then) = __$OtpResponseDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String status, String? message
+});
+
+
+
+
+}
+/// @nodoc
+class __$OtpResponseDtoCopyWithImpl<$Res>
+    implements _$OtpResponseDtoCopyWith<$Res> {
+  __$OtpResponseDtoCopyWithImpl(this._self, this._then);
+
+  final _OtpResponseDto _self;
+  final $Res Function(_OtpResponseDto) _then;
+
+/// Create a copy of OtpResponseDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? message = freezed,}) {
+  return _then(_OtpResponseDto(
+status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
 // dart format on

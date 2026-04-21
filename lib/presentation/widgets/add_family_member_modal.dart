@@ -5,7 +5,6 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/glass_styles.dart';
 import '../../domain/providers/auth_provider.dart';
 import '../../domain/providers/family_provider.dart';
-import 'glass_button.dart';
 import 'glass_text_field.dart';
 
 class AddFamilyMemberModal extends ConsumerStatefulWidget {
@@ -153,7 +152,7 @@ class _AddFamilyMemberModalState extends ConsumerState<AddFamilyMemberModal> {
                             onTap: () async {
                               final success = await ref
                                   .read(familyProvider.notifier)
-                                  .addFamilyMember(user.id!);
+                                  .addFamilyMember(user.id);
                               
                               if (context.mounted) {
                                 if (success) {

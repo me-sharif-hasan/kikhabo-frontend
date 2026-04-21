@@ -83,4 +83,20 @@ class AuthRepository {
       // Non-critical — silently ignore failures
     }
   }
+
+  Future<OtpResponseDto> verifyOtp(String email, String otp) async {
+    try {
+      return await _dataSource.verifyOtp(email, otp);
+    } catch (e) {
+      throw Exception(_mapError(e));
+    }
+  }
+
+  Future<OtpResponseDto> resendOtp(String email) async {
+    try {
+      return await _dataSource.resendOtp(email);
+    } catch (e) {
+      throw Exception(_mapError(e));
+    }
+  }
 }

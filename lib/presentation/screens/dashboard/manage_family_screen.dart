@@ -100,7 +100,7 @@ class ManageFamilyScreen extends ConsumerWidget {
                                       Navigator.pop(context);
                                       final success = await ref
                                           .read(familyProvider.notifier)
-                                          .removeFamilyMember(familyMembers[index].id!);
+                                          .removeFamilyMember(familyMembers[index].id);
                                       
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(

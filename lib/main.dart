@@ -3,36 +3,38 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'core/services/ad_service.dart';
-import 'core/services/analytics_service.dart';
-import 'core/services/notification_service.dart';
-import 'core/services/notification_navigation_handler.dart';
-import 'core/theme/app_colors.dart';
-import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart';
+
 import 'core/constants/app_constants.dart';
+import 'core/services/analytics_service.dart';
+import 'core/services/notification_navigation_handler.dart';
+import 'core/theme/app_theme.dart';
 import 'domain/providers/auth_provider.dart';
-import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/auth/email_verification_screen.dart';
+import 'presentation/screens/auth/google_profile_completion_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/auth/profile_prompt_screen.dart';
 import 'presentation/screens/auth/registration_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
+import 'presentation/screens/dashboard/edit_profile_screen.dart';
 import 'presentation/screens/dashboard/home_screen.dart';
-import 'presentation/screens/dashboard/meals_screen.dart';
 import 'presentation/screens/dashboard/manage_family_screen.dart';
 import 'presentation/screens/dashboard/manage_preferences_screen.dart';
-import 'presentation/screens/dashboard/meal_statistics_screen.dart';
-import 'presentation/screens/dashboard/meal_details_screen.dart';
+import 'presentation/screens/dashboard/meals_screen.dart';
 import 'presentation/screens/dashboard/profile_screen.dart';
-import 'presentation/screens/dashboard/edit_profile_screen.dart';
-import 'presentation/screens/onboarding_screen.dart';
-import 'presentation/screens/auth/profile_prompt_screen.dart';
-import 'presentation/screens/auth/google_profile_completion_screen.dart';
-import 'presentation/screens/dashboard/fridge_scan_screen.dart';
-import 'presentation/screens/dashboard/recipe_list_screen.dart';
 import 'presentation/screens/dashboard/recipe_detail_screen.dart';
+import 'presentation/screens/dashboard/recipe_list_screen.dart';
+import 'presentation/screens/dashboard/meal_statistics_screen.dart';
+import 'presentation/screens/dashboard/fridge_scan_screen.dart';
+import 'presentation/screens/onboarding_screen.dart';
+import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/dashboard/meal_details_screen.dart';
 import 'data/models/meal.dart';
 import 'data/models/recipe.dart';
 import 'domain/providers/recipe_provider.dart';
+import 'core/services/ad_service.dart';
+import 'core/services/notification_service.dart';
+import 'core/theme/app_colors.dart';
+import 'core/theme/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,7 +136,8 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
             state.matchedLocation == '/splash' ||
             state.matchedLocation == '/onboarding' ||
             state.matchedLocation == '/profile-prompt' ||
-            state.matchedLocation == '/google-profile-completion';
+            state.matchedLocation == '/google-profile-completion' ||
+            state.matchedLocation == '/verify-email';
 
         // If logged out and on a protected page, send to login.
         debugPrint('User is unauthenticated. Showing login page!');
@@ -159,6 +162,13 @@ class _KikhaboRouterState extends ConsumerState<_KikhaboRouter> {
         GoRoute(
           path: '/register',
           builder: (context, state) => const RegistrationScreen(),
+        ),
+        GoRoute(
+          path: '/verify-email',
+          builder: (context, state) {
+            final email = state.uri.queryParameters['email'] ?? '';
+            return EmailVerificationScreen(email: email);
+          },
         ),
         GoRoute(
           path: '/profile-prompt',

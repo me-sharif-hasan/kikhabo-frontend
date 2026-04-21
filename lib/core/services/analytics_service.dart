@@ -115,7 +115,7 @@ class AnalyticsService {
       name: 'meal_detail_viewed',
       parameters: {
         'meal_name': mealName,
-        if (mealId != null) 'meal_id': mealId,
+        'meal_id': ?mealId,
       },
     );
   }
@@ -131,7 +131,7 @@ class AnalyticsService {
       parameters: {
         'status': status,
         'rating': rating,
-        if (mealId != null) 'meal_id': mealId,
+        'meal_id': ?mealId,
       },
     );
   }

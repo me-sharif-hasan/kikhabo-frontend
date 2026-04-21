@@ -31,12 +31,14 @@ class AuthState {
   final User? user;
   final String? error;
   final bool isAuthenticated;
+  final String? pendingVerificationEmail;
 
   const AuthState({
     this.isLoading = false,
     this.user,
     this.error,
     this.isAuthenticated = false,
+    this.pendingVerificationEmail,
   });
 
   AuthState copyWith({
@@ -44,12 +46,14 @@ class AuthState {
     User? user,
     String? error,
     bool? isAuthenticated,
+    String? pendingVerificationEmail,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       user: user ?? this.user,
       error: error ?? this.error,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      pendingVerificationEmail: pendingVerificationEmail ?? this.pendingVerificationEmail,
     );
   }
 }
@@ -170,6 +174,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     await _storage.delete(key: AppConstants.tokenKey);
     state = const AuthState(isAuthenticated: false);
+  }
+
+  Future<bool> verifyOtp(String email, String otp) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _repository.verifyOtp(email, otp);
+      state = state.copyWith(isLoading: false);
+      return response.status == 'success';
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> resendOtp(String email) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _repository.resendOtp(email);
+      state = state.copyWith(isLoading: false);
+      return response.status == 'success';
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
+  void setPendingVerificationEmail(String email) {
+    state = state.copyWith(pendingVerificationEmail: email);
   }
 }
 

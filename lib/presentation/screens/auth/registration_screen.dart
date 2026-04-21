@@ -97,10 +97,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         return;
       }
 
+      final email = _emailController.text.trim();
+      
       final userDto = UserDto(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
         gender: _selectedGender,
         country: _selectedCountry!,
@@ -118,10 +120,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           SnackBar(content: Text(state.error!), backgroundColor: AppColors.error),
         );
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration Successful! Please Login.')),
-        );
-        context.pop();
+        // Navigate to OTP verification screen with the registered email
+        context.go('/verify-email?email=$email');
       }
     }
   }

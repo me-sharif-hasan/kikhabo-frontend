@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/update_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../domain/providers/auth_provider.dart';
@@ -41,6 +42,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   Future<void> _checkAuthAndNavigate() async {
     // Wait for animation AND give getInitialMessage() time to resolve
     await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    // Check for Play Store updates. Mandatory updates (priority >= 4) will
+    // show a non-dismissable system UI; optional ones show a dialog.
+    await UpdateService.instance.checkAndPrompt(context);
 
     if (!mounted) return;
 

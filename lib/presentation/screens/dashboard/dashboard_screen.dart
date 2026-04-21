@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/analytics_service.dart';
-import '../../../core/theme/app_color_palette.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_styles.dart';
@@ -41,7 +40,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             return canGoBack
                 ? IconButton(
                     icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
-                    onPressed: () => Navigator.of(ctx).pop(),
+                    onPressed: () => Navigator.of(ctx).maybePop(),
                   )
                 : IconButton(
                     icon: Icon(Icons.menu, color: AppColors.textPrimary),

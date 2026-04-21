@@ -63,21 +63,6 @@ class _MealCardState extends ConsumerState<MealCard> {
     }
   }
 
-  Future<void> _updateRating(int rating) async {
-    if (widget.meal.id == null) return;
-
-    setState(() {
-      _currentRating = rating;
-    });
-
-    // Immediately persist rating to API
-    await ref.read(mealPlanningProvider.notifier).updateMealStatus(
-      mealId: widget.meal.id!,
-      status: _currentStatus ?? 'PLANNED',
-      rating: rating,
-    );
-  }
-
   String _getFormattedDate() {
     if (widget.meal.timestamp == null) return 'Today';
     final date = DateTime.fromMillisecondsSinceEpoch(widget.meal.timestamp!);

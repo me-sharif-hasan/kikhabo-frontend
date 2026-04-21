@@ -134,8 +134,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _onLogin() async {
     if (_formKey.currentState!.validate()) {
+      final email = _emailController.text.trim();
+      
       await ref.read(authProvider.notifier).login(
-        _emailController.text.trim(),
+        email,
         _passwordController.text,
       );
       
@@ -144,7 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Log the login with user info for audience segmentation.
         final user = ref.read(userProvider).user;
         AnalyticsService.instance.logLogin(
-          userId: user?.id?.toString() ?? _emailController.text,
+          userId: user != null ? user.id.toString() : _emailController.text,
           email: _emailController.text.trim(),
           displayName: user != null
               ? '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim()
@@ -152,12 +154,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
         context.go('/dashboard/home');
       } else if (state.error != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error!),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        // Check if email is not verified (INVALID_CREDENTIALS with "not verified" in message)
+        final errorMsg = state.error!;
+        if (errorMsg.contains('not verified')) {
+          // Navigate to OTP verification screen with email pre-filled
+          context.go('/verify-email?email=$email');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }

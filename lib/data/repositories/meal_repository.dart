@@ -33,8 +33,8 @@ class MealRepository {
     try {
       final result = await _dataSource.generateMealPlan(preferences);
       // Cache in background without blocking
-      if (result.meals != null && result.meals!.isNotEmpty) {
-        _cacheService.cacheSuggestedMeals(result.meals!).catchError((e) {
+      if (result.meals.isNotEmpty) {
+        _cacheService.cacheSuggestedMeals(result.meals).catchError((e) {
           debugPrint('Failed to cache suggested meals: $e');
         });
       }

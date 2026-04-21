@@ -139,3 +139,24 @@ Map<String, dynamic> _$GetUserResponseToJson(_GetUserResponse instance) =>
       'preference': instance.preference,
       'profileImageUrl': instance.profileImageUrl,
     };
+
+_OtpVerifyDto _$OtpVerifyDtoFromJson(Map<String, dynamic> json) =>
+    _OtpVerifyDto(email: json['email'] as String, otp: json['otp'] as String);
+
+Map<String, dynamic> _$OtpVerifyDtoToJson(_OtpVerifyDto instance) =>
+    <String, dynamic>{'email': instance.email, 'otp': instance.otp};
+
+_OtpResendDto _$OtpResendDtoFromJson(Map<String, dynamic> json) =>
+    _OtpResendDto(email: json['email'] as String);
+
+Map<String, dynamic> _$OtpResendDtoToJson(_OtpResendDto instance) =>
+    <String, dynamic>{'email': instance.email};
+
+_OtpResponseDto _$OtpResponseDtoFromJson(Map<String, dynamic> json) =>
+    _OtpResponseDto(
+      status: json['status'] as String,
+      message: json['message'] as String?,
+    );
+
+Map<String, dynamic> _$OtpResponseDtoToJson(_OtpResponseDto instance) =>
+    <String, dynamic>{'status': instance.status, 'message': instance.message};
